@@ -1,4 +1,5 @@
 import info.movito.themoviedbapi.model.core.MovieResultsPage;
+import org.json.JSONObject;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
@@ -7,6 +8,8 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.io.IOException;
+import java.nio.channels.Channel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -14,6 +17,7 @@ import java.util.Objects;
 public class Tkun910_bot extends TelegramLongPollingBot {
     private final BotMovie botMovie = new BotMovie();
     private MovieResultsPage movieDbs;
+    private JSONObject movieReviewObjs;
 
     @Override
     public String getBotUsername() {
@@ -42,9 +46,19 @@ public class Tkun910_bot extends TelegramLongPollingBot {
 
                 // get an array of seached movie
                 this.movieDbs = this.botMovie.searchMovie(movieName);
-                replyMessage = this.botMovie.displaySearchedMovie(this.movieDbs, update.getMessage().getChatId().toString());
-                executeMessage(replyMessage);
+
+                // check if not movie found
+                if (this.movieDbs.getResults().isEmpty()) {
+                    replyMessage.setChatId(update.getMessage().getChatId().toString());
+                    replyMessage.setText("No movies found !!!\n Check your input again!!!");
+                    executeMessage(replyMessage);
+                }
+                else {
+                    replyMessage = this.botMovie.displaySearchedMovie(this.movieDbs, 0, update.getMessage().getChatId().toString());
+                    executeMessage(replyMessage);
+                }
             }
+
 
         }
         else if (update.hasCallbackQuery()) {
@@ -59,8 +73,6 @@ public class Tkun910_bot extends TelegramLongPollingBot {
             }
             else if (receiveMessage.contains("movie_next-page")) {
                 String page = receiveMessage.split("_")[2];
-                if (page.equals("0"))
-                    page = "1";
                 replyMessage = this.botMovie.displaySearchedMovie(this.movieDbs, Integer.parseInt(page), chatId, Math.toIntExact(messageId));
                 executeMessage(replyMessage);
             }
@@ -71,9 +83,30 @@ public class Tkun910_bot extends TelegramLongPollingBot {
             }
             else if (receiveMessage.contains("movie index")) {
                 String index = receiveMessage.split(" ")[2];
-                SendMessage[] reply = this.botMovie.getMovieDetail(this.movieDbs, Integer.parseInt(index), chatId);
+                SendMessage[] reply = this.botMovie.displayMovieDetail(this.movieDbs, Integer.parseInt(index), chatId);
                 for (int i=0; i < reply.length; i++)
                     executeMessage(reply[i]);
+            }
+            else if (receiveMessage.contains("get trailer")) {
+                String index = receiveMessage.split(" ")[2];
+                SendMessage message = this.botMovie.displayTrailer(this.movieDbs, Integer.parseInt(index), chatId);
+                executeMessage(message);
+            }
+            else if (receiveMessage.contains("get review")) {
+                String index = receiveMessage.split(" ")[2];
+                this.movieReviewObjs = this.botMovie.getUserReview(this.movieDbs,Integer.parseInt(index));
+                SendMessage message = this.botMovie.displayReview(this.movieReviewObjs, 0, chatId);
+                executeMessage(message);
+            }
+            else if (receiveMessage.contains("review_forward_")) {
+                String page = receiveMessage.split("_")[2];
+                EditMessageText message = this.botMovie.displayReview(this.movieReviewObjs, Integer.parseInt(page), chatId, Math.toIntExact(messageId), false);
+                executeMessage(message);
+            }
+            else if (receiveMessage.contains("review_backward_")) {
+                String page = receiveMessage.split("_")[2];
+                EditMessageText message = this.botMovie.displayReview(this.movieReviewObjs, Integer.parseInt(page), chatId, Math.toIntExact(messageId), true);
+                executeMessage(message);
             }
 
         }
