@@ -7,12 +7,9 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-
-import java.io.IOException;
-import java.nio.channels.Channel;
+import com.vdurmont.emoji.EmojiParser;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class Tkun910_bot extends TelegramLongPollingBot {
     private final BotMovie botMovie = new BotMovie();
@@ -50,7 +47,7 @@ public class Tkun910_bot extends TelegramLongPollingBot {
                 // check if not movie found
                 if (this.movieDbs.getResults().isEmpty()) {
                     replyMessage.setChatId(update.getMessage().getChatId().toString());
-                    replyMessage.setText("No movies found !!!\n Check your input again!!!");
+                    replyMessage.setText(EmojiParser.parseToUnicode("OPPP!!! Sorry I don't see that movie :cry: :cry: \n Can you please check you movie name again, it maybe wrong :thinking: :thinking:"));
                     executeMessage(replyMessage);
                 }
                 else {
@@ -132,7 +129,7 @@ public class Tkun910_bot extends TelegramLongPollingBot {
         // create a reply welcoming chat
         InlineKeyboardMarkup allBtn = new InlineKeyboardMarkup();
         allBtn.setKeyboard(btnList);
-        String welcome = "Hello!! I'm Movie Bot. What can I help you";
+        String welcome = EmojiParser.parseToUnicode("Hello :wave: \n\nI'm Movie, an bot that know every thing about movies :sunglasses: \n\nWhat !! Don't believe me :upside_down: :upside_down: How dare you??? :rage: :rage: \nAsk me anything you want");
         SendMessage message = new SendMessage();
         message.setChatId(chatID);
         message.setText(welcome);

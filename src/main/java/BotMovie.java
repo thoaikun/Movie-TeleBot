@@ -1,3 +1,4 @@
+import com.vdurmont.emoji.EmojiParser;
 import info.movito.themoviedbapi.TmdbApi;
 import info.movito.themoviedbapi.TmdbSearch;
 import info.movito.themoviedbapi.model.MovieDb;
@@ -8,12 +9,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
+import org.telegram.telegrambots.meta.api.objects.MessageEntity;
 import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 import java.io.*;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,8 +48,9 @@ public class BotMovie {
 
     public EditMessageText getStart(String chatID, int messageID) {
         // setting up for message
-        String textMessage = "This is Movies, one of my bot cousin. He knows a lot of movies. If you want to find something, ask himm\n" +
-                             "Type /movie + 'your movie you want to find' to get started";
+        String textMessage = EmojiParser.parseToUnicode(
+        "This is Mozziess :dog: :dog:, one of my bot cousin. He knows a lot of movies. If you want to find something, ask himm\n\n" +
+                             "Type /movie + 'your movie you want to find' to ask");
 
         // creat a editMessage
         EditMessageText editText = new EditMessageText();
@@ -124,8 +128,8 @@ public class BotMovie {
     public SendMessage[] displayMovieDetail(MovieResultsPage movieDbs, int index, String chatID) {
         MovieDb detailMovie = movieDbs.getResults().get(index);
         String movieName = detailMovie.getTitle();
-        String movieYear = "Release date: " + detailMovie.getReleaseDate();
-        String movieOverview = "Overview: " + detailMovie.getOverview();
+        String movieYear = "Release date:  " + detailMovie.getReleaseDate();
+        String movieOverview = "Overview:  " + detailMovie.getOverview();
         String movieRating = "Ratting: " + detailMovie.getVoteAverage();
         String movieImg = detailMovie.getPosterPath();
 
@@ -148,7 +152,7 @@ public class BotMovie {
         // send infomation
         SendMessage info = new SendMessage();
         info.setChatId(chatID);
-        info.setText(movieName + "\n" + movieYear + "\n" + movieRating + "\n" + movieOverview);
+        info.setText(movieName.toUpperCase() + "\n\n" + movieYear + "\n\n" + movieRating + "\n\n" + movieOverview);
         info.setReplyMarkup(allBtn);
 
         SendMessage[] reply = new SendMessage[2];
@@ -205,7 +209,7 @@ public class BotMovie {
         if (reviews.length() == 0) {
             SendMessage replyMessage = new SendMessage();
             replyMessage.setChatId(chatID);
-            replyMessage.setText("Sorry !! There is no review of this movie");
+            replyMessage.setText(EmojiParser.parseToUnicode("No one watches this movie you stupid head  :clown: :clown: !!\n\nGet you ass out of here"));
             return replyMessage;
         }
 
@@ -225,7 +229,7 @@ public class BotMovie {
         // return a message
         SendMessage replyMessage = new SendMessage();
         replyMessage.setChatId(chatID);
-        replyMessage.setText(userName + "\n" + userReview);
+        replyMessage.setText(EmojiParser.parseToUnicode(":bust_in_silhouette: Account: " + userName + "\n\n" + "\t:speaking_head_in_silhouette: Review: \n\n" + userReview));
         replyMessage.setReplyMarkup(allBtn);
         return replyMessage;
     }
@@ -261,7 +265,7 @@ public class BotMovie {
         EditMessageText editText = new EditMessageText();
         editText.setChatId(chatID);
         editText.setMessageId(messageID);
-        editText.setText(userName + "\n" + userReview);
+        editText.setText(EmojiParser.parseToUnicode(":bust_in_silhouette: Account: " + userName + "\n\n" + "\t:speaking_head_in_silhouette: Review: \n\n" + userReview));
         editText.setReplyMarkup(allBtn);
         return editText;
     }
@@ -281,6 +285,5 @@ public class BotMovie {
 
         return jsonObject;
     }
-
 
 }
