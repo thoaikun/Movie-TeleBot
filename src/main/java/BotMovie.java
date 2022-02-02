@@ -1,29 +1,34 @@
 import com.vdurmont.emoji.EmojiParser;
-import info.movito.themoviedbapi.TmdbApi;
-import info.movito.themoviedbapi.TmdbSearch;
-import info.movito.themoviedbapi.model.MovieDb;
-import info.movito.themoviedbapi.model.Video;
-import info.movito.themoviedbapi.model.core.MovieResultsPage;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
-import org.telegram.telegrambots.meta.api.objects.MessageEntity;
-import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 import java.io.*;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
 public class BotMovie {
-    private final TmdbApi tmdbApi = new TmdbApi("16e8d32a627987825706488073388e2e");
-    private TmdbSearch theSeacher = new TmdbSearch(this.tmdbApi);
+    private final String API = "16e8d32a627987825706488073388e2e";
+    private final String REQUEST_URL = "https://api.themoviedb.org/3";
+
+    private JSONObject movieObjs;
+    private JSONObject reviewObjs;
+
+    public BotMovie() {
+        this.movieObjs = new JSONObject();
+        this.reviewObjs = new JSONObject();
+    }
+
+    public void setMovieObjs(JSONObject object) { this.movieObjs = object; }
+    public void setReviewObjs(JSONObject object) { this.reviewObjs = object; }
+    public JSONObject getMovieObjs() { return this.movieObjs; }
+    public JSONObject getReviewObjs() { return this.reviewObjs; }
 
     private static String readAll(Reader rd) throws IOException {
         StringBuilder sb = new StringBuilder();
@@ -50,7 +55,8 @@ public class BotMovie {
         // setting up for message
         String textMessage = EmojiParser.parseToUnicode(
         "This is Mozziess :dog: :dog:, one of my bot cousin. He knows a lot of movies. If you want to find something, ask himm\n\n" +
-                             "Type /movie + 'your movie you want to find' to ask");
+                             "Type /movie + 'your movie you want to find' to ask\n" +
+                             "Type /trending to see which movie is hot this weekend");
 
         // creat a editMessage
         EditMessageText editText = new EditMessageText();
@@ -60,26 +66,34 @@ public class BotMovie {
         return editText;
     }
 
-    public MovieResultsPage searchMovie(String movieName) {
-       return this.theSeacher.searchMovie(movieName, null, null, false, null);
+    public JSONObject searchMovie(String movieName) {
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject = readJsonFromUrl(this.REQUEST_URL + "/search/movie?api_key=" + this.API + "&query=" + movieName);
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return jsonObject;
     }
 
-    public SendMessage displaySearchedMovie(MovieResultsPage movieDbs, int page, String chatID) {
+    public SendMessage displaySearchedMovie(int page, String chatID) {
         List<InlineKeyboardButton> row1 = new ArrayList<>();
+        JSONArray searchedMovies = this.movieObjs.getJSONArray("results");
 
         // set string to display movie seached name
         String movieNames = "";
-        List<MovieDb> movieDbList = movieDbs.getResults();
-        for (int i=page; i < Math.min(movieDbList.size(), page*5+5); i++) {
-            movieNames += i + "/ " + movieDbList.get(i).toString() + "\n";
-            row1.add(new InlineKeyboardButton(String.valueOf(i), null, "movie index " + String.valueOf(i), null, null, null, null, null));
+        for (int i=page; i < Math.min(searchedMovies.length(), page*5+5); i++) {
+            movieNames += i + "/ " + searchedMovies.getJSONObject(i).get("original_title") + "\n";
+            row1.add(new InlineKeyboardButton(String.valueOf(i), null, "movie_index_" + String.valueOf(i), null, null, null, null, null));
         }
 
         // create inline button to select movie ans switch to next page
-        InlineKeyboardButton forwardBtn = new InlineKeyboardButton(">>", null, "movie_next-page_" + String.valueOf(page+1), null, null, null, null, null);
+        InlineKeyboardButton forwardBtn = new InlineKeyboardButton(">>", null, "movie_forward_" + String.valueOf(page+1), null, null, null, null, null);
         List<InlineKeyboardButton> row2 = new ArrayList<>();
         List<List<InlineKeyboardButton>> btnList = new ArrayList<>();
-        if ((page+1)*5 < movieDbs.getResults().size())
+        if ((page+1)*5 < searchedMovies.length())
             row2.add(forwardBtn);
         btnList.add(row1); btnList.add(row2);
         InlineKeyboardMarkup allBtn = new InlineKeyboardMarkup();
@@ -93,25 +107,25 @@ public class BotMovie {
         return editText;
     }
 
-    public EditMessageText displaySearchedMovie(MovieResultsPage movieDbs, int page, String chatID, int messageID) {
+    public EditMessageText displaySearchedMovie(int page, String chatID, int messageID) {
         List<InlineKeyboardButton> row1 = new ArrayList<>();
+        JSONArray searchedMovies = this.movieObjs.getJSONArray("results");
 
         // set string to display movie seached name
         String movieNames = "";
-        List<MovieDb> movieDbList = movieDbs.getResults();
 
-        for (int i=page*5; i < Math.min(movieDbList.size(), page*5 + 5); i++) {
-            movieNames += i + "/ " + movieDbList.get(i).toString() + "\n";
-            row1.add(new InlineKeyboardButton(String.valueOf(i), null, "movie index " + String.valueOf(i), null, null, null, null, null));
+        for (int i=page*5; i < Math.min(searchedMovies.length(), page*5 + 5); i++) {
+            movieNames += i + "/ " + searchedMovies.getJSONObject(i).get("original_title") + "\n";
+            row1.add(new InlineKeyboardButton(String.valueOf(i), null, "movie_index_" + String.valueOf(i), null, null, null, null, null));
         }
 
-        InlineKeyboardButton forwardBtn = new InlineKeyboardButton(">>", null, "movie_next-page_" + (page+1), null, null, null, null, null);
-        InlineKeyboardButton backwardBtn = new InlineKeyboardButton("<<", null, "movie_previous-page_" + (page-1), null, null, null, null, null);
+        InlineKeyboardButton forwardBtn = new InlineKeyboardButton(">>", null, "movie_forward_" + (page+1), null, null, null, null, null);
+        InlineKeyboardButton backwardBtn = new InlineKeyboardButton("<<", null, "movie_backward_" + (page-1), null, null, null, null, null);
         List<InlineKeyboardButton> row2 = new ArrayList<>();
         List<List<InlineKeyboardButton>> btnList = new ArrayList<>();
         if ((page-1)*5 >= 0)
             row2.add(backwardBtn);
-        if ((page+1)*5 < movieDbs.getResults().size())
+        if ((page+1)*5 < searchedMovies.length())
             row2.add(forwardBtn);
         btnList.add(row1); btnList.add(row2);
         InlineKeyboardMarkup allBtn = new InlineKeyboardMarkup();
@@ -125,13 +139,13 @@ public class BotMovie {
         return editText;
     }
 
-    public SendMessage[] displayMovieDetail(MovieResultsPage movieDbs, int index, String chatID) {
-        MovieDb detailMovie = movieDbs.getResults().get(index);
-        String movieName = detailMovie.getTitle();
-        String movieYear = "Release date:  " + detailMovie.getReleaseDate();
-        String movieOverview = "Overview:  " + detailMovie.getOverview();
-        String movieRating = "Ratting: " + detailMovie.getVoteAverage();
-        String movieImg = detailMovie.getPosterPath();
+    public SendMessage[] displayMovieDetail(int index, String chatID) {
+        JSONObject detailMovie = this.movieObjs.getJSONArray("results").getJSONObject(index);
+        String movieName = detailMovie.get("original_title").toString();
+        String movieYear = "Release date:  " + detailMovie.get("release_date");
+        String movieOverview = "Overview:  " + detailMovie.get("overview");
+        String movieRating = "Ratting: " + detailMovie.get("vote_average");
+        String movieImg = detailMovie.get("poster_path").toString();
 
         // send movie image link
         SendMessage img = new SendMessage();
@@ -162,14 +176,14 @@ public class BotMovie {
         return reply;
     }
 
-    public SendMessage displayTrailer(MovieResultsPage movieDbs, int index, String chatId) {
-        MovieDb detailMovie = movieDbs.getResults().get(index);
-        int moiveId = detailMovie.getId();
+    public SendMessage displayTrailer(int index, String chatId) {
+        JSONObject detailMovie = this.movieObjs.getJSONArray("results").getJSONObject(index);
+        String moiveId = detailMovie.get("id").toString();
 
         // read json file to get an array obj of videos
         JSONObject jsonObject = new JSONObject();
         try {
-            jsonObject = readJsonFromUrl("https://api.themoviedb.org/3/movie/" + String.valueOf(moiveId) + "/videos?api_key=16e8d32a627987825706488073388e2e");
+            jsonObject = readJsonFromUrl("https://api.themoviedb.org/3/movie/" + moiveId + "/videos?api_key=16e8d32a627987825706488073388e2e");
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -202,8 +216,8 @@ public class BotMovie {
         return replyMessage;
     }
 
-    public SendMessage displayReview(JSONObject object, int index, String chatID) {
-        JSONArray reviews = object.getJSONArray("results");
+    public SendMessage displayReview(int index, String chatID) {
+        JSONArray reviews = this.movieObjs.getJSONArray("results");
 
         // check whether it has review or not
         if (reviews.length() == 0) {
@@ -234,8 +248,8 @@ public class BotMovie {
         return replyMessage;
     }
 
-    public EditMessageText displayReview(JSONObject object, int index, String chatID, int messageID, boolean isBackward) {
-        JSONArray reviews = object.getJSONArray("results");
+    public EditMessageText displayReview(int index, String chatID, int messageID, boolean isBackward) {
+        JSONArray reviews = this.movieObjs.getJSONArray("results");
         JSONObject review = reviews.getJSONObject(index);
         int length = review.get("content").toString().length();
         if (length > 4000) {
@@ -270,14 +284,14 @@ public class BotMovie {
         return editText;
     }
 
-    public JSONObject getUserReview(MovieResultsPage movieDbs, int index) {
-        MovieDb detailMovie = movieDbs.getResults().get(index);
-        int moiveId = detailMovie.getId();
+    public JSONObject getUserReview(int index) {
+        JSONObject detailMovie = this.movieObjs.getJSONArray("results").getJSONObject(index);
+        String moiveId = detailMovie.get("id").toString();
 
         // read json file to get an array obj of review
         JSONObject jsonObject = new JSONObject();
         try {
-            jsonObject = readJsonFromUrl("https://api.themoviedb.org/3/movie/" + String.valueOf(moiveId) + "/reviews?api_key=16e8d32a627987825706488073388e2e");
+            jsonObject = readJsonFromUrl(this.REQUEST_URL + "/movie/" + moiveId + "/reviews?api_key=" + this.API);
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -286,4 +300,73 @@ public class BotMovie {
         return jsonObject;
     }
 
+    public SendMessage displayTrendingMovie(int page, String chatID) {
+        JSONArray trendingMovies = this.movieObjs.getJSONArray("results");
+        String moviesName = "";
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+
+        for (int i=0; i < 5; i++) {
+            JSONObject movie = trendingMovies.getJSONObject(i);
+            moviesName += String.valueOf(i) + "/ " + movie.get("original_title") + "\n";
+            row1.add(new InlineKeyboardButton(String.valueOf(i), null, "movie_index_" + String.valueOf(i), null, null, null, null, null));
+        }
+
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
+        InlineKeyboardButton forwardBtn = new InlineKeyboardButton(">>", null, "trending_forward_" + String.valueOf(page+1), null, null, null, null, null);
+        row2.add(forwardBtn);
+        List<List<InlineKeyboardButton>> btnList = new ArrayList<>();
+        btnList.add(row1);
+        btnList.add(row2);
+        InlineKeyboardMarkup allBtn = new InlineKeyboardMarkup(btnList);
+
+        SendMessage replyMessage = new SendMessage();
+        replyMessage.setChatId(chatID);
+        replyMessage.setText("Trending movie of the week: \n" + moviesName);
+        replyMessage.setReplyMarkup(allBtn);
+        return replyMessage;
+    }
+
+    public EditMessageText displayTrendingMovie(int page, String chatID, int messageID) {
+        JSONArray trendingMovies = this.movieObjs.getJSONArray("results");
+        String moviesName = "";
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+
+        for (int i=page*5; i < page*5+5; i++) {
+            JSONObject movie = trendingMovies.getJSONObject(i);
+            moviesName += String.valueOf(i) + "/ " + movie.get("original_title") + "\n";
+            row1.add(new InlineKeyboardButton(String.valueOf(i), null, "movie_index_" + String.valueOf(i), null, null, null, null, null));
+        }
+
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
+        InlineKeyboardButton backwardBtn = new InlineKeyboardButton("<<", null, "trending_backward_" + String.valueOf(page-1), null, null, null, null, null);
+        InlineKeyboardButton forwardBtn = new InlineKeyboardButton(">>", null, "trending_forward_" + String.valueOf(page+1), null, null, null, null, null);
+        if (page > 0)
+            row2.add(backwardBtn);
+        if (page < 3)
+            row2.add(forwardBtn);
+        List<List<InlineKeyboardButton>> btnList = new ArrayList<>();
+        btnList.add(row1);
+        btnList.add(row2);
+        InlineKeyboardMarkup allBtn = new InlineKeyboardMarkup(btnList);
+
+        EditMessageText editText = new EditMessageText();
+        editText.setChatId(chatID);
+        editText.setMessageId(messageID);
+        editText.setText("Trending movie of the week: \n" + moviesName);
+        editText.setReplyMarkup(allBtn);
+        return editText;
+    }
+
+    public JSONObject getTrending() {
+        // read json file to get an array obj of review
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject = readJsonFromUrl(this.REQUEST_URL + "/trending/movie/week?api_key=" + this.API);
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return jsonObject;
+    }
 }
