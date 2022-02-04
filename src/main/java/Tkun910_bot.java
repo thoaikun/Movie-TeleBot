@@ -1,6 +1,3 @@
-import info.movito.themoviedbapi.model.core.MovieResultsPage;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
@@ -14,8 +11,6 @@ import java.util.List;
 
 public class Tkun910_bot extends TelegramLongPollingBot {
     private final BotMovie botMovie = new BotMovie();
-    private JSONObject movieObjs;
-    private JSONObject movieReviewObjs;
 
     @Override
     public String getBotUsername() {
@@ -171,4 +166,8 @@ public class Tkun910_bot extends TelegramLongPollingBot {
             e.printStackTrace();
         }
     }
+
+//    public void addUpcomming() {
+//        Timer
+//    }
 }

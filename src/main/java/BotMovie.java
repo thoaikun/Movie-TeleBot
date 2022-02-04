@@ -86,11 +86,11 @@ public class BotMovie {
         String movieNames = "";
         for (int i=page; i < Math.min(searchedMovies.length(), page*5+5); i++) {
             movieNames += i + "/ " + searchedMovies.getJSONObject(i).get("original_title") + "\n";
-            row1.add(new InlineKeyboardButton(String.valueOf(i), null, "movie_index_" + String.valueOf(i), null, null, null, null, null));
+            row1.add(new InlineKeyboardButton(String.valueOf(i), null, "movie_index_" + i, null, null, null, null, null));
         }
 
         // create inline button to select movie ans switch to next page
-        InlineKeyboardButton forwardBtn = new InlineKeyboardButton(">>", null, "movie_forward_" + String.valueOf(page+1), null, null, null, null, null);
+        InlineKeyboardButton forwardBtn = new InlineKeyboardButton(">>", null, "movie_forward_" + (page+1), null, null, null, null, null);
         List<InlineKeyboardButton> row2 = new ArrayList<>();
         List<List<InlineKeyboardButton>> btnList = new ArrayList<>();
         if ((page+1)*5 < searchedMovies.length())
@@ -116,7 +116,7 @@ public class BotMovie {
 
         for (int i=page*5; i < Math.min(searchedMovies.length(), page*5 + 5); i++) {
             movieNames += i + "/ " + searchedMovies.getJSONObject(i).get("original_title") + "\n";
-            row1.add(new InlineKeyboardButton(String.valueOf(i), null, "movie_index_" + String.valueOf(i), null, null, null, null, null));
+            row1.add(new InlineKeyboardButton(String.valueOf(i), null, "movie_index_" + i, null, null, null, null, null));
         }
 
         InlineKeyboardButton forwardBtn = new InlineKeyboardButton(">>", null, "movie_forward_" + (page+1), null, null, null, null, null);
@@ -153,9 +153,9 @@ public class BotMovie {
         img.setText("https://image.tmdb.org/t/p/original/" + movieImg);
 
         // add trailer and review button
-        InlineKeyboardButton trailerBtn = new InlineKeyboardButton("Trailer", null, "get trailer " + String.valueOf(index), null, null, null, null, null);
-        InlineKeyboardButton watchReviewBtn = new InlineKeyboardButton("Watch reviews", null, "get review " + String.valueOf(index), null, null, null, null, null);
-        InlineKeyboardButton addReviewBtn = new InlineKeyboardButton("Add review", null, "set review " + String.valueOf(index), null, null, null, null, null);
+        InlineKeyboardButton trailerBtn = new InlineKeyboardButton("Trailer", null, "get trailer " + index, null, null, null, null, null);
+        InlineKeyboardButton watchReviewBtn = new InlineKeyboardButton("Watch reviews", null, "get review " + index, null, null, null, null, null);
+        InlineKeyboardButton addReviewBtn = new InlineKeyboardButton("Add review", null, "set review " + index, null, null, null, null, null);
         List<InlineKeyboardButton> row1 = new ArrayList<>();
         List<List<InlineKeyboardButton>> btnList = new ArrayList<>();
         row1.add(trailerBtn); row1.add(watchReviewBtn); row1.add(addReviewBtn);
@@ -217,7 +217,7 @@ public class BotMovie {
     }
 
     public SendMessage displayReview(int index, String chatID) {
-        JSONArray reviews = this.movieObjs.getJSONArray("results");
+        JSONArray reviews = this.reviewObjs.getJSONArray("results");
 
         // check whether it has review or not
         if (reviews.length() == 0) {
@@ -234,7 +234,7 @@ public class BotMovie {
         // create button to switch to next review
         List<InlineKeyboardButton> row1 = new ArrayList<>();
         List<List<InlineKeyboardButton>> btnList = new ArrayList<>();
-        InlineKeyboardButton forwardBtn = new InlineKeyboardButton(">>", null, "review_forward_" + String.valueOf(index+1), null, null, null, null, null);
+        InlineKeyboardButton forwardBtn = new InlineKeyboardButton(">>", null, "review_forward_" + (index+1), null, null, null, null, null);
         row1.add(forwardBtn);
         btnList.add(row1);
         InlineKeyboardMarkup allBtn = new InlineKeyboardMarkup();
@@ -249,7 +249,7 @@ public class BotMovie {
     }
 
     public EditMessageText displayReview(int index, String chatID, int messageID, boolean isBackward) {
-        JSONArray reviews = this.movieObjs.getJSONArray("results");
+        JSONArray reviews = this.reviewObjs.getJSONArray("results");
         JSONObject review = reviews.getJSONObject(index);
         int length = review.get("content").toString().length();
         if (length > 4000) {
@@ -265,8 +265,8 @@ public class BotMovie {
         // create button to switch to next review
         List<InlineKeyboardButton> row1 = new ArrayList<>();
         List<List<InlineKeyboardButton>> btnList = new ArrayList<>();
-        InlineKeyboardButton forwardBtn = new InlineKeyboardButton(">>", null, "review_forward_" + String.valueOf(index+1), null, null, null, null, null);
-        InlineKeyboardButton backwardBtn = new InlineKeyboardButton("<<", null, "review_backward_" + String.valueOf(index-1), null, null, null, null, null);
+        InlineKeyboardButton forwardBtn = new InlineKeyboardButton(">>", null, "review_forward_" + (index+1), null, null, null, null, null);
+        InlineKeyboardButton backwardBtn = new InlineKeyboardButton("<<", null, "review_backward_" + (index-1), null, null, null, null, null);
         if (index-1 >= 0)
             row1.add(backwardBtn);
         if (index+1 < reviews.length())
@@ -307,12 +307,12 @@ public class BotMovie {
 
         for (int i=0; i < 5; i++) {
             JSONObject movie = trendingMovies.getJSONObject(i);
-            moviesName += String.valueOf(i) + "/ " + movie.get("original_title") + "\n";
-            row1.add(new InlineKeyboardButton(String.valueOf(i), null, "movie_index_" + String.valueOf(i), null, null, null, null, null));
+            moviesName += i + "/ " + movie.get("original_title") + "\n";
+            row1.add(new InlineKeyboardButton(String.valueOf(i), null, "movie_index_" + i, null, null, null, null, null));
         }
 
         List<InlineKeyboardButton> row2 = new ArrayList<>();
-        InlineKeyboardButton forwardBtn = new InlineKeyboardButton(">>", null, "trending_forward_" + String.valueOf(page+1), null, null, null, null, null);
+        InlineKeyboardButton forwardBtn = new InlineKeyboardButton(">>", null, "trending_forward_" + (page+1), null, null, null, null, null);
         row2.add(forwardBtn);
         List<List<InlineKeyboardButton>> btnList = new ArrayList<>();
         btnList.add(row1);
@@ -333,13 +333,13 @@ public class BotMovie {
 
         for (int i=page*5; i < page*5+5; i++) {
             JSONObject movie = trendingMovies.getJSONObject(i);
-            moviesName += String.valueOf(i) + "/ " + movie.get("original_title") + "\n";
-            row1.add(new InlineKeyboardButton(String.valueOf(i), null, "movie_index_" + String.valueOf(i), null, null, null, null, null));
+            moviesName += i + "/ " + movie.get("original_title") + "\n";
+            row1.add(new InlineKeyboardButton(String.valueOf(i), null, "movie_index_" + i, null, null, null, null, null));
         }
 
         List<InlineKeyboardButton> row2 = new ArrayList<>();
-        InlineKeyboardButton backwardBtn = new InlineKeyboardButton("<<", null, "trending_backward_" + String.valueOf(page-1), null, null, null, null, null);
-        InlineKeyboardButton forwardBtn = new InlineKeyboardButton(">>", null, "trending_forward_" + String.valueOf(page+1), null, null, null, null, null);
+        InlineKeyboardButton backwardBtn = new InlineKeyboardButton("<<", null, "trending_backward_" + (page-1), null, null, null, null, null);
+        InlineKeyboardButton forwardBtn = new InlineKeyboardButton(">>", null, "trending_forward_" + (page+1), null, null, null, null, null);
         if (page > 0)
             row2.add(backwardBtn);
         if (page < 3)
@@ -362,6 +362,18 @@ public class BotMovie {
         JSONObject jsonObject = new JSONObject();
         try {
             jsonObject = readJsonFromUrl(this.REQUEST_URL + "/trending/movie/week?api_key=" + this.API);
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return jsonObject;
+    }
+
+    public JSONObject getUpcoming() {
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject = readJsonFromUrl(this.REQUEST_URL + "/movie/upcoming?api_key=" + this.API);
         }
         catch (IOException e) {
             e.printStackTrace();
