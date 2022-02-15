@@ -1,3 +1,4 @@
+import org.json.JSONObject;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
@@ -6,11 +7,16 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import com.vdurmont.emoji.EmojiParser;
+
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class Tkun910_bot extends TelegramLongPollingBot {
     private final BotMovie botMovie = new BotMovie();
+    private final BotWaiting botWaiting = new BotWaiting();
 
     @Override
     public String getBotUsername() {
@@ -51,6 +57,27 @@ public class Tkun910_bot extends TelegramLongPollingBot {
                     callBotMovie(receiveMessage, chatId, messageId);
                 } catch (Exception e) {
                     e.printStackTrace();
+                }
+            }
+            if (receiveMessage.contains("add_to_list_")) {
+                String index = receiveMessage.split("_")[3];
+                JSONObject movie = this.botMovie.getMovie(Integer.parseInt(index));
+                upComingMovie upComingMovie = new upComingMovie(movie.get("original_title").toString(),
+                                                                movie.get("release_date").toString(),
+                                                                chatId);
+                this.botWaiting.addToList(new upComingMovie("hello", "2022-02-15", chatId));
+                if (!this.botWaiting.isExist(upComingMovie)) {
+                    this.botWaiting.addToList(upComingMovie);
+                    SendMessage message = new SendMessage();
+                    message.setChatId(chatId);
+                    message.setText("add successful");
+                    executeMessage(message);
+                }
+                else {
+                    SendMessage message = new SendMessage();
+                    message.setChatId(chatId);
+                    message.setText("Movie has already in list");
+                    executeMessage(message);
                 }
             }
         }
@@ -164,5 +191,36 @@ public class Tkun910_bot extends TelegramLongPollingBot {
                 message = this.botMovie.displayReview(Integer.parseInt(page), chatId, Math.toIntExact(messageId), true);
             executeMessage(message);
         }
+    }
+
+    class Checker extends TimerTask {
+        /*
+            Class use to check whether a movie in BotWaiting is releases
+         */
+        private List<upComingMovie> list;
+
+        public Checker(List<upComingMovie> l) {
+            this.list = l;
+        }
+
+        @Override
+        public void run() {
+            if (this.list.size() != 0) {
+                for (int i=0; i < this.list.size(); i++) {
+                    upComingMovie movie = this.list.get(i);
+                    SendMessage message = new SendMessage();
+                    message.setChatId(movie.chatId);
+                    message.setText("Movie: " + movie.name + " has been released, check it now!!");
+                    executeMessage(message);
+                }
+            }
+        }
+    }
+
+    public void runningCheck() {
+        long delay = 1000L;
+        long period = 1000L * 5L;
+        new Timer().scheduleAtFixedRate(this.botWaiting, 0 ,5000);
+        new Timer().scheduleAtFixedRate(new Checker(this.botWaiting.getNotifyList()), 0, 5000   );
     }
 }

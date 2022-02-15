@@ -13,8 +13,10 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import java.io.*;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+
 
 public class BotMovie {
     private final String API = "16e8d32a627987825706488073388e2e";
@@ -108,6 +110,8 @@ public class BotMovie {
 
         this.movieObjs =  jsonObject.getJSONArray("results");
     }
+
+    public JSONObject getMovie(int index) { return this.movieObjs.getJSONObject(index); }
 
     public EditMessageText getStart(String chatID, int messageID) {
         // setting up for message
@@ -206,11 +210,18 @@ public class BotMovie {
                                                         null, null, null, null, null);
         InlineKeyboardButton watchReviewBtn = new InlineKeyboardButton("Watch reviews", null, "get_movieReview_" + index,
                                                             null, null, null, null, null);
-        InlineKeyboardButton addReviewBtn = new InlineKeyboardButton("Add review", null, "set review" + index,
+        InlineKeyboardButton addToListBtn = new InlineKeyboardButton("Add to list", null, "add_to_list_" + index,
                                                           null, null, null, null, null);
+
         List<InlineKeyboardButton> row1 = new ArrayList<>();
         List<List<InlineKeyboardButton>> btnList = new ArrayList<>();
-        row1.add(trailerBtn); row1.add(watchReviewBtn); row1.add(addReviewBtn);
+        row1.add(trailerBtn);
+        row1.add(watchReviewBtn);
+        // check date if it is an upcoming movie
+        LocalDate releaseDate = LocalDate.parse((CharSequence) detailMovie.get("release_date"));
+        if (LocalDate.now().isBefore(releaseDate))
+            row1.add(addToListBtn);
+
         btnList.add(row1);
         InlineKeyboardMarkup allBtn = new InlineKeyboardMarkup();
         allBtn.setKeyboard(btnList);
