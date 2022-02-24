@@ -64,16 +64,16 @@ public class BotWaiting extends TimerTask {
 
     @Override
     public void run() {
-        this.notifyList.clear();
+        for (int i=0; i < this.notifyList.size(); i++) {
+            LocalDate date = LocalDate.parse((CharSequence) this.notifyList.get(i).releaseDate);
+            if (LocalDate.now().isAfter(date))
+                this.notifyList.remove(i);
+        }
         while (!this.myWaitingList.isEmpty()) {
             upComingMovie movie = this.myWaitingList.peek();
             LocalDate date = LocalDate.parse((CharSequence) movie.releaseDate);
-            if (LocalDate.now().isEqual(date)) {
+            if (LocalDate.now().isEqual(date))
                 this.notifyList.add(this.myWaitingList.poll());
-            }
-            else if (LocalDate.now().isAfter(date) || LocalDate.now().isBefore(date)) { // if it has been notified, remove from the list
-                break;
-            }
         }
     }
 }

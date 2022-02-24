@@ -1,6 +1,8 @@
 import org.json.JSONObject;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageMedia;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -37,7 +39,11 @@ public class Tkun910_bot extends TelegramLongPollingBot {
             // check receive message
             if (receiveMessage.equals("/start")) {
                 SendMessage replyMessage = welcomeMessage(update.getMessage().getChatId().toString());
-                executeMessage(replyMessage);
+                try {
+                    execute(replyMessage);
+                } catch (TelegramApiException e) {
+                    e.printStackTrace();
+                }
             }
             else if (receiveMessage.contains("movie")) {
                 try {
@@ -59,25 +65,32 @@ public class Tkun910_bot extends TelegramLongPollingBot {
                     e.printStackTrace();
                 }
             }
-            if (receiveMessage.contains("add_to_list_")) {
-                String index = receiveMessage.split("_")[3];
-                JSONObject movie = this.botMovie.getMovie(Integer.parseInt(index));
+            if (receiveMessage.equals("add_to_list")) {
+                JSONObject movie = this.botMovie.getMovie();
                 upComingMovie upComingMovie = new upComingMovie(movie.get("original_title").toString(),
                                                                 movie.get("release_date").toString(),
                                                                 chatId);
-                this.botWaiting.addToList(new upComingMovie("hello", "2022-02-15", chatId));
+//                this.botWaiting.addToList(new upComingMovie("hello", "2022-02-24", chatId));
                 if (!this.botWaiting.isExist(upComingMovie)) {
                     this.botWaiting.addToList(upComingMovie);
                     SendMessage message = new SendMessage();
                     message.setChatId(chatId);
                     message.setText("add successful");
-                    executeMessage(message);
+                    try {
+                        execute(message);
+                    } catch (TelegramApiException e) {
+                        e.printStackTrace();
+                    }
                 }
                 else {
                     SendMessage message = new SendMessage();
                     message.setChatId(chatId);
                     message.setText("Movie has already in list");
-                    executeMessage(message);
+                    try {
+                        execute(message);
+                    } catch (TelegramApiException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
@@ -112,75 +125,47 @@ public class Tkun910_bot extends TelegramLongPollingBot {
         return message;
     }
 
-    public void executeMessage(SendMessage message) {
-        try {
-            execute(message);
-        }
-        catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void executeMessage(EditMessageText message) {
-        try {
-            execute(message);
-        }
-        catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-    }
-
     public void callBotMovie(String receiveMessage, String chatId, long messageId) throws Exception {
         if (receiveMessage.contains("/movie")) {
-            SendMessage replyMessage = new SendMessage();
             // take movie name from user message
             String movieName = receiveMessage.split(" ", 2)[1];
             movieName = movieName.replace(" ", "%20");
 
             // get an array of seached movie
             this.botMovie.searchMovie(movieName);
-
-            // check if not movie found
-            if (this.botMovie.getMovieObjs().isEmpty()) {
-                replyMessage.setChatId(chatId);
-                replyMessage.setText(EmojiParser.parseToUnicode("OPPP!!! Sorry I don't see that movie :cry: :cry: \n Can you please check you movie name again, it maybe wrong :thinking: :thinking:"));
-                executeMessage(replyMessage);
-            }
-            else {
-                replyMessage = this.botMovie.displayMovieList(0, chatId);
-                executeMessage(replyMessage);
-            }
+            SendPhoto replyMessage = this.botMovie.displayMovieDetail(chatId);
+            execute(replyMessage);
         }
         else if (receiveMessage.equals("/trending_movie")) {
             this.botMovie.getTrending();
-            SendMessage replyMessage = this.botMovie.displayMovieList(0, chatId);
-            executeMessage(replyMessage);
+            SendPhoto replyMessage = this.botMovie.displayMovieDetail(chatId);
+            execute(replyMessage);
+        }
+        else if (receiveMessage.equals("/upcoming_movie")) {
+            this.botMovie.getUpcoming();
+            SendPhoto replyMessage = this.botMovie.displayMovieDetail(chatId);
+            execute(replyMessage);
         }
         else if (receiveMessage.equals("get_movie")) {
             EditMessageText replyMessage = this.botMovie.getStart(chatId, Math.toIntExact(messageId));
-            executeMessage(replyMessage);
+            execute(replyMessage);
         }
         else if (receiveMessage.contains("movieList_forward") || receiveMessage.contains("movieList_backward")) {
-            String page = receiveMessage.split("_")[2];
-            EditMessageText replyMessage = this.botMovie.displayMovieList(Integer.parseInt(page), chatId, Math.toIntExact(messageId));
-            executeMessage(replyMessage);
-        }
-        else if (receiveMessage.contains("movieList_index")) {
-            String index = receiveMessage.split("_")[2];
-            SendMessage[] reply = this.botMovie.displayMovieDetail(Integer.parseInt(index), chatId);
-            for (int i=0; i < reply.length; i++)
-                executeMessage(reply[i]);
+            if (receiveMessage.contains("forward"))
+                this.botMovie.increaseIndex();
+            else
+                this.botMovie.decreaseIndex();
+            EditMessageMedia replyMessage = this.botMovie.displayMovieDetail(chatId, messageId);
+            execute(replyMessage);
         }
         else if (receiveMessage.contains("get_movieTrailer")) {
-            String index = receiveMessage.split("_")[2];
-            SendMessage message = this.botMovie.displayTrailer(Integer.parseInt(index), chatId);
-            executeMessage(message);
+            SendMessage message = this.botMovie.displayTrailer(chatId);
+            execute(message);
         }
         else if (receiveMessage.contains("get_movieReview")) {
-            String index = receiveMessage.split("_")[2];
-            this.botMovie.getUserReview(Integer.parseInt(index));
+            this.botMovie.getUserReview();
             SendMessage message = this.botMovie.displayReview(0, chatId);
-            executeMessage(message);
+            execute(message);
         }
         else if (receiveMessage.contains("movieReview_forward_") || receiveMessage.contains("movieReview_backward_")) {
             EditMessageText message;
@@ -189,7 +174,7 @@ public class Tkun910_bot extends TelegramLongPollingBot {
                 message = this.botMovie.displayReview(Integer.parseInt(page), chatId, Math.toIntExact(messageId), false);
             else
                 message = this.botMovie.displayReview(Integer.parseInt(page), chatId, Math.toIntExact(messageId), true);
-            executeMessage(message);
+            execute(message);
         }
     }
 
@@ -211,7 +196,11 @@ public class Tkun910_bot extends TelegramLongPollingBot {
                     SendMessage message = new SendMessage();
                     message.setChatId(movie.chatId);
                     message.setText("Movie: " + movie.name + " has been released, check it now!!");
-                    executeMessage(message);
+                    try {
+                        execute(message);
+                    } catch (TelegramApiException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
@@ -219,8 +208,8 @@ public class Tkun910_bot extends TelegramLongPollingBot {
 
     public void runningCheck() {
         long delay = 1000L;
-        long period = 1000L * 5L;
+        long period = 1000L * 60L * 60L * 8L;
         new Timer().scheduleAtFixedRate(this.botWaiting, 0 ,5000);
-        new Timer().scheduleAtFixedRate(new Checker(this.botWaiting.getNotifyList()), 0, 5000   );
+        new Timer().scheduleAtFixedRate(new Checker(this.botWaiting.getNotifyList()), 0, period);
     }
 }
