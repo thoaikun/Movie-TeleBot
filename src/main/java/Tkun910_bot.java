@@ -70,7 +70,8 @@ public class Tkun910_bot extends TelegramLongPollingBot {
                 upComingMovie upComingMovie = new upComingMovie(movie.get("original_title").toString(),
                                                                 movie.get("release_date").toString(),
                                                                 chatId);
-//                this.botWaiting.addToList(new upComingMovie("hello", "2022-02-24", chatId));
+                this.botWaiting.addToList(new upComingMovie("hello", "2022-02-28", chatId));
+                this.botWaiting.addToList(new upComingMovie("hello", "2022-02-29", chatId));
                 if (!this.botWaiting.isExist(upComingMovie)) {
                     this.botWaiting.addToList(upComingMovie);
                     SendMessage message = new SendMessage();
