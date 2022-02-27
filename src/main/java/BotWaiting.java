@@ -56,7 +56,7 @@ public class BotWaiting extends TimerTask {
         Object[] arrays = this.myWaitingList.toArray();
         for (int i=0; i < arrays.length; i++) {
             upComingMovie upComingMovie = (upComingMovie) arrays[i];
-            if (upComingMovie.releaseDate == movie.releaseDate)
+            if (upComingMovie.name.equals(movie.name))
                 return true;
         }
         return false;
