@@ -2,6 +2,7 @@ import org.json.JSONObject;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.methods.send.SendVideo;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageMedia;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -11,10 +12,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import com.vdurmont.emoji.EmojiParser;
 
 import java.sql.Time;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 public class Tkun910_bot extends TelegramLongPollingBot {
     private final BotMovie botMovie = new BotMovie();
@@ -70,8 +68,8 @@ public class Tkun910_bot extends TelegramLongPollingBot {
                 upComingMovie upComingMovie = new upComingMovie(movie.get("original_title").toString(),
                                                                 movie.get("release_date").toString(),
                                                                 chatId);
-                this.botWaiting.addToList(new upComingMovie("hello", "2022-02-28", chatId));
-                this.botWaiting.addToList(new upComingMovie("hello", "2022-03-01", chatId));
+                this.botWaiting.addToList(new upComingMovie("hello", "2022-03-03", chatId));
+                this.botWaiting.addToList(new upComingMovie("hello", "2022-03-04", chatId));
                 if (!this.botWaiting.isExist(upComingMovie)) {
                     this.botWaiting.addToList(upComingMovie);
                     SendMessage message = new SendMessage();
@@ -164,7 +162,6 @@ public class Tkun910_bot extends TelegramLongPollingBot {
             execute(message);
         }
         else if (receiveMessage.contains("get_movieReview")) {
-            this.botMovie.getUserReview();
             SendMessage message = this.botMovie.displayReview(0, chatId);
             execute(message);
         }
@@ -183,34 +180,37 @@ public class Tkun910_bot extends TelegramLongPollingBot {
         /*
             Class use to check whether a movie in BotWaiting is releases
          */
-        private List<upComingMovie> list;
+        private Queue<upComingMovie> list;
 
-        public Checker(List<upComingMovie> l) {
+        public Checker(Queue<upComingMovie> l) {
             this.list = l;
         }
 
         @Override
         public void run() {
-            if (this.list.size() != 0) {
-                for (int i=0; i < this.list.size(); i++) {
-                    upComingMovie movie = this.list.get(i);
-                    SendMessage message = new SendMessage();
-                    message.setChatId(movie.chatId);
-                    message.setText("Movie: " + movie.name + " has been released, check it now!!");
-                    try {
-                        execute(message);
-                    } catch (TelegramApiException e) {
-                        e.printStackTrace();
-                    }
+            List<upComingMovie> temp = new ArrayList<>();
+            while (!this.list.isEmpty()) {
+                upComingMovie movie = this.list.poll();
+                temp.add(movie);
+                SendMessage message = new SendMessage();
+                message.setChatId(movie.chatId);
+                message.setText("Movie: " + movie.name + " has been released, check it now!!");
+                try {
+                    execute(message);
+                } catch (TelegramApiException e) {
+                    e.printStackTrace();
                 }
             }
+
+            for (int i=0; i < temp.size(); i++)
+                this.list.add(temp.get(i));
         }
     }
 
     public void runningCheck() {
         long delay = 1000L;
-        long period = 1000L * 60L * 60L * 8L;
-        new Timer().scheduleAtFixedRate(this.botWaiting, 0 ,5000);
-        new Timer().scheduleAtFixedRate(new Checker(this.botWaiting.getNotifyList()), 0, period);
+        long period = 1000L * 60L * 60L * 12L;
+        new Timer().scheduleAtFixedRate(this.botWaiting, 0 ,period);
+        new Timer().scheduleAtFixedRate(new Checker(this.botWaiting.getNotifyList()), delay, period);
     }
 }

@@ -29,11 +29,11 @@ class MovieComparater implements Comparator<upComingMovie> {
 
 public class BotWaiting extends TimerTask {
     private PriorityQueue<upComingMovie> myWaitingList;
-    private List<upComingMovie> notifyList;
+    private Queue<upComingMovie> notifyList;
 
     public BotWaiting() {
         this.myWaitingList = new PriorityQueue<upComingMovie>(5, new MovieComparater());
-        this.notifyList = new ArrayList<>();
+        this.notifyList = new ArrayDeque<>();
     }
 
     public boolean addToList(String name, String releaseDate, String chatId) {
@@ -48,7 +48,7 @@ public class BotWaiting extends TimerTask {
         return false;
     }
 
-    public List<upComingMovie> getNotifyList() {
+    public Queue<upComingMovie> getNotifyList() {
         return this.notifyList;
     }
 
@@ -64,16 +64,23 @@ public class BotWaiting extends TimerTask {
 
     @Override
     public void run() {
-        for (int i=0; i < this.notifyList.size(); i++) {
-            LocalDate date = LocalDate.parse((CharSequence) this.notifyList.get(i).releaseDate);
+        while (!this.notifyList.isEmpty()) {
+            upComingMovie movie = this.notifyList.peek();
+            LocalDate date = LocalDate.parse((CharSequence) movie.releaseDate);
             if (LocalDate.now().isAfter(date))
-                this.notifyList.remove(i);
+                this.notifyList.poll();
+            else
+                break;
         }
         while (!this.myWaitingList.isEmpty()) {
             upComingMovie movie = this.myWaitingList.peek();
             LocalDate date = LocalDate.parse((CharSequence) movie.releaseDate);
             if (LocalDate.now().isEqual(date))
                 this.notifyList.add(this.myWaitingList.poll());
+            else
+                break;
         }
     }
 }
+
+

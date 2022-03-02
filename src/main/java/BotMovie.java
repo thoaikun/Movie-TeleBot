@@ -14,8 +14,11 @@ import org.telegram.telegrambots.meta.api.objects.media.InputMediaPhoto;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 
@@ -50,7 +53,7 @@ public class BotMovie {
         this.currentMovieIndex = 0;
     }
 
-    public void getUserReview() throws UnirestException {
+    public boolean getUserReview() throws UnirestException {
         /*
             Because MovieDb has small number of review so we will use RapidAPI to get Review from IMDB
             So first we need to get movie id on rapidAPI then get it review
@@ -77,9 +80,14 @@ public class BotMovie {
                 .header("x-rapidapi-host", "imdb8.p.rapidapi.com")
                 .header("x-rapidapi-key", "3793fd6a8bmsh3992e80f2f92f34p1ee63ajsn3b0fe00f7804")
                 .asJson();
-        this.reviewObjs = response.getBody()
-                                    .getObject()
-                                    .getJSONArray("reviews");
+
+        JSONObject temp = response.getBody()
+                                  .getObject();
+        if (temp.has("reviews")) {
+            this.reviewObjs = temp.getJSONArray("reviews");
+            return true;
+        }
+        return false;
     }
 
     public void getTrending() throws UnirestException {
@@ -112,18 +120,20 @@ public class BotMovie {
         return editText;
     }
 
-    public SendPhoto displayMovieDetail(String chatID) {
+    public SendPhoto displayMovieDetail(String chatID) throws ParseException, UnirestException {
         if (this.movieObjs.isEmpty()) {
             SendPhoto replyMessage = new SendPhoto(chatID, new InputFile("https://kbimages.dreamhosters.com/images/Site_Not_Found_Dreambot.fw.png"));
-            replyMessage.setCaption(EmojiParser.parseToUnicode("OPPP!!! Sorry I don't see that movie :cry: :cry: \n Can you please check you movie name again, it maybe wrong :thinking: :thinking:"));
+            replyMessage.setCaption(EmojiParser.parseToUnicode("OPPP!!! Sorry I don't see that movie :cry: :cry: \n " +
+                                                                     "Can you please check you movie name again, it maybe wrong :thinking: :thinking:"));
             return replyMessage;
         }
 
         JSONObject detailMovie = this.movieObjs.getJSONObject(this.currentMovieIndex);
+
         String movieName = detailMovie.get("original_title").toString();
-        String movieYear = "Release date:  " + detailMovie.get("release_date");
-        String movieOverview = "Overview:  " + detailMovie.get("overview");
-        String movieRating = "Ratting: " + detailMovie.get("vote_average");
+        String movieReleaseDate = detailMovie.get("release_date").toString();
+        String movieOverview = detailMovie.get("overview").toString();
+        String movieRating = detailMovie.get("vote_average").toString();
         String movieImg = detailMovie.get("poster_path").toString();
 
         // add trailer and review button
@@ -138,16 +148,18 @@ public class BotMovie {
         List<InlineKeyboardButton> row2 = new ArrayList<>();
         List<List<InlineKeyboardButton>> btnList = new ArrayList<>();
         row1.add(trailerBtn);
-        row1.add(watchReviewBtn);
+        // check if is has no reviews
+        if (this.getUserReview())
+            row1.add(watchReviewBtn);
         // check date if it is an upcoming movie
-        LocalDate releaseDate = LocalDate.parse((CharSequence) detailMovie.get("release_date"));
+        LocalDate releaseDate = LocalDate.parse((CharSequence) movieReleaseDate);
         if (LocalDate.now().isBefore(releaseDate))
             row1.add(addToListBtn);
 
         if (this.currentMovieIndex > 0)
             row2.add(new InlineKeyboardButton("<<", null, "movieList_backward",
                     null, null, null, null, null));
-        if (this.currentMovieIndex < this.movieObjs.length())
+        if (this.currentMovieIndex < this.movieObjs.length()-1)
             row2.add(new InlineKeyboardButton(">>", null, "movieList_forward",
                     null, null, null, null, null));
 
@@ -155,19 +167,29 @@ public class BotMovie {
         btnList.add(row2);
         InlineKeyboardMarkup allBtn = new InlineKeyboardMarkup(btnList);
 
+        // Format date
+        SimpleDateFormat input = new SimpleDateFormat("yyyy-MM-dd");
+        Date valueDate = input.parse(movieReleaseDate);
+        SimpleDateFormat output = new SimpleDateFormat("dd/MM/yyyy");
+        movieReleaseDate = output.format(valueDate);
+
+
         InputFile image = new InputFile("https://image.tmdb.org/t/p/original/" + movieImg);
         SendPhoto reply = new SendPhoto(chatID, image);
-        reply.setCaption(movieName.toUpperCase() + "\n\n" + movieYear + "\n\n" + movieRating + "\n\n" + movieOverview);
+        reply.setCaption(movieName.toUpperCase() + "\n\n" +
+                         "Release date: " + movieReleaseDate + "\n\n" +
+                         "Rating: " + movieRating + "\n\n" +
+                         "Overview: " + movieOverview);
         reply.setReplyMarkup(allBtn);
         return reply;
     }
 
-    public EditMessageMedia displayMovieDetail(String chatID, long messageID) {
+    public EditMessageMedia displayMovieDetail(String chatID, long messageID) throws ParseException {
         JSONObject detailMovie = this.movieObjs.getJSONObject(this.currentMovieIndex);
         String movieName = detailMovie.get("original_title").toString();
-        String movieYear = "Release date:  " + detailMovie.get("release_date");
-        String movieOverview = "Overview:  " + detailMovie.get("overview");
-        String movieRating = "Ratting: " + detailMovie.get("vote_average");
+        String movieReleaseDate = detailMovie.get("release_date").toString();
+        String movieOverview = detailMovie.get("overview").toString();
+        String movieRating = detailMovie.get("vote_average").toString();
         String movieImg = detailMovie.get("poster_path").toString();
 
         // add trailer and review button
@@ -191,7 +213,7 @@ public class BotMovie {
         if (this.currentMovieIndex > 0)
             row2.add(new InlineKeyboardButton("<<", null, "movieList_backward",
                     null, null, null, null, null));
-        if (this.currentMovieIndex < this.movieObjs.length())
+        if (this.currentMovieIndex < this.movieObjs.length()-1)
             row2.add(new InlineKeyboardButton(">>", null, "movieList_forward",
                     null, null, null, null, null));
 
@@ -200,8 +222,17 @@ public class BotMovie {
         InlineKeyboardMarkup allBtn = new InlineKeyboardMarkup();
         allBtn.setKeyboard(btnList);
 
+        // Format date
+        SimpleDateFormat input = new SimpleDateFormat("yyyy-MM-dd");
+        Date valueDate = input.parse(movieReleaseDate);
+        SimpleDateFormat output = new SimpleDateFormat("dd/MM/yyyy");
+        movieReleaseDate = output.format(valueDate);
+
         InputMediaPhoto nextMovie = new InputMediaPhoto();
-        nextMovie.setCaption(movieName.toUpperCase() + "\n\n" + movieYear + "\n\n" + movieRating + "\n\n" + movieOverview);
+        nextMovie.setCaption(movieName.toUpperCase() + "\n\n" +
+                             "Release date: " + movieReleaseDate + "\n\n" +
+                             "Rating: " + movieRating + "\n\n" +
+                             "Overview: " + movieOverview);
         nextMovie.setMedia("https://image.tmdb.org/t/p/original/" + movieImg);
         EditMessageMedia reply = new EditMessageMedia(  chatID,
                                                         Math.toIntExact(messageID),
