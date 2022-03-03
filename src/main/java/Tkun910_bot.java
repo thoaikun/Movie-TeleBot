@@ -3,6 +3,7 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.send.SendVideo;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageMedia;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -15,8 +16,13 @@ import java.sql.Time;
 import java.util.*;
 
 public class Tkun910_bot extends TelegramLongPollingBot {
-    private final BotMovie botMovie = new BotMovie();
-    private final BotWaiting botWaiting = new BotWaiting();
+    private  BotMovie botMovie;
+    private  BotWaiting botWaiting;
+
+    public Tkun910_bot() {
+        this.botMovie = new BotMovie();
+        this.botWaiting = new BotWaiting();
+    }
 
     @Override
     public String getBotUsername() {
@@ -68,8 +74,8 @@ public class Tkun910_bot extends TelegramLongPollingBot {
                 upComingMovie upComingMovie = new upComingMovie(movie.get("original_title").toString(),
                                                                 movie.get("release_date").toString(),
                                                                 chatId);
-                this.botWaiting.addToList(new upComingMovie("hello", "2022-03-03", chatId));
                 this.botWaiting.addToList(new upComingMovie("hello", "2022-03-04", chatId));
+                this.botWaiting.addToList(new upComingMovie("hello", "2022-03-05", chatId));
                 if (!this.botWaiting.isExist(upComingMovie)) {
                     this.botWaiting.addToList(upComingMovie);
                     SendMessage message = new SendMessage();
@@ -157,12 +163,8 @@ public class Tkun910_bot extends TelegramLongPollingBot {
             EditMessageMedia replyMessage = this.botMovie.displayMovieDetail(chatId, messageId);
             execute(replyMessage);
         }
-        else if (receiveMessage.contains("get_movieTrailer")) {
-            SendMessage message = this.botMovie.displayTrailer(chatId);
-            execute(message);
-        }
         else if (receiveMessage.contains("get_movieReview")) {
-            SendMessage message = this.botMovie.displayReview(0, chatId);
+            SendMessage message = this.botMovie.displayReview(0, chatId, messageId);
             execute(message);
         }
         else if (receiveMessage.contains("movieReview_forward_") || receiveMessage.contains("movieReview_backward_")) {
@@ -173,6 +175,10 @@ public class Tkun910_bot extends TelegramLongPollingBot {
             else
                 message = this.botMovie.displayReview(Integer.parseInt(page), chatId, Math.toIntExact(messageId), true);
             execute(message);
+        }
+            else if (receiveMessage.equals("delete_movieReview")) {
+            DeleteMessage deleteMessage = new DeleteMessage(chatId, Math.toIntExact(messageId));
+            execute(deleteMessage);
         }
     }
 
