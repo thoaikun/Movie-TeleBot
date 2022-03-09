@@ -3,6 +3,7 @@ import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.vdurmont.emoji.EmojiParser;
+import org.checkerframework.checker.units.qual.A;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -26,18 +27,16 @@ public class BotMovie {
 
     private JSONArray movieObjs;
     private JSONArray reviewObjs;
-    private int currentMovieIndex;
+    private Object previousMessage;
+    private int code;
 
     public BotMovie() {
         this.movieObjs = new JSONArray();
         this.reviewObjs = new JSONArray();
-        this.currentMovieIndex = 0;
     }
 
     public JSONArray getMovieObjs() { return this.movieObjs; }
     public JSONArray getReviewObjs() { return this.reviewObjs; }
-    public void increaseIndex() { this.currentMovieIndex ++; }
-    public void decreaseIndex() { this.currentMovieIndex --; }
 
     public void searchMovie(String movieName) throws UnirestException {
         HttpResponse<JsonNode> response = Unirest.get(  "https://api.themoviedb.org/" +
@@ -49,7 +48,6 @@ public class BotMovie {
         this.movieObjs = response.getBody()
                                  .getObject()
                                  .getJSONArray("results");
-        this.currentMovieIndex = 0;
     }
 
     public void getUpcoming() throws UnirestException {
@@ -61,7 +59,6 @@ public class BotMovie {
         this.movieObjs = response.getBody()
                 .getObject()
                 .getJSONArray("results");
-        this.currentMovieIndex = 0;
     }
 
     public void getTrending() throws UnirestException {
@@ -73,16 +70,15 @@ public class BotMovie {
         this.movieObjs = response.getBody()
                                  .getObject()
                                  .getJSONArray("results");
-        this.currentMovieIndex = 0;
     }
 
-    public boolean getUserReview() throws UnirestException {
+    public boolean getUserReview(int index) throws UnirestException {
         /*
             Because MovieDb has small number of review so we will use RapidAPI to get Review from IMDB
             So first we need to get movie id on rapidAPI then get it review
          */
-        String movieName = this.movieObjs.getJSONObject(this.currentMovieIndex).get("original_title").toString();
-        String movieYear = this.movieObjs.getJSONObject(this.currentMovieIndex).get("release_date").toString();
+        String movieName = this.movieObjs.getJSONObject(index).get("original_title").toString();
+        String movieYear = this.movieObjs.getJSONObject(index).get("release_date").toString();
         movieYear = movieYear.split("-")[0];
         movieName = movieName.replace(" ", "%20");
 
@@ -92,9 +88,11 @@ public class BotMovie {
                 .header("x-rapidapi-key", "3793fd6a8bmsh3992e80f2f92f34p1ee63ajsn3b0fe00f7804")
                 .asJson();
         System.out.println(response.toString());
-        JSONArray foundMovies = (JSONArray) response.getBody()
-                                                      .getObject()
-                                                      .getJSONArray("results");
+        JSONObject temp2 =  response.getBody().getObject();
+        if (!temp2.has("results"))
+            return false;
+
+        JSONArray foundMovies = temp2.getJSONArray("results");
         JSONObject foundMovie = null;
         for (int i=0; i < foundMovies.length(); i++) {
             JSONObject t = foundMovies.getJSONObject(i);
@@ -124,10 +122,10 @@ public class BotMovie {
         return false;
     }
 
-    public JSONObject getMovie() { return this.movieObjs.getJSONObject(this.currentMovieIndex); }
+    public JSONObject getMovie(int index) { return this.movieObjs.getJSONObject(index); }
 
-    private String getTrailer() throws UnirestException {
-        JSONObject detailMovie = this.movieObjs.getJSONObject(this.currentMovieIndex);
+    private String getTrailer(int index) throws UnirestException {
+        JSONObject detailMovie = this.movieObjs.getJSONObject(index);
         String movieId = detailMovie.get("id").toString();
 
         HttpResponse<JsonNode> response = Unirest.get(  "https://api.themoviedb.org/" +
@@ -175,88 +173,99 @@ public class BotMovie {
         return editText;
     }
 
-    public SendPhoto displayMovieDetail(String chatID) throws ParseException, UnirestException {
+    public SendMessage displaySearchList(int index, String chatID) {
         if (this.movieObjs.isEmpty()) {
-            SendPhoto replyMessage = new SendPhoto(chatID, new InputFile("https://kbimages.dreamhosters.com/images/Site_Not_Found_Dreambot.fw.png"));
-            replyMessage.setCaption(EmojiParser.parseToUnicode("OPPP!!! Sorry I don't see that movie :cry: :cry: \n " +
-                                                                     "Can you please check you movie name again, it maybe wrong :thinking: :thinking:"));
+            SendMessage replyMessage = new SendMessage();
+            replyMessage.setChatId(chatID);
+            replyMessage.setText(EmojiParser.parseToUnicode("OPPP!!! Sorry I don't see that movie :cry: :cry: \n " +
+                    "Can you please check you movie name again, it maybe wrong :thinking: :thinking:"));
             return replyMessage;
         }
 
-        JSONObject detailMovie = this.movieObjs.getJSONObject(this.currentMovieIndex);
-
-        String movieName = detailMovie.get("original_title").toString();
-        String movieReleaseDate = detailMovie.get("release_date").toString();
-        String movieOverview = detailMovie.get("overview").toString();
-        String movieRating = detailMovie.get("vote_average").toString();
-        String movieImg = detailMovie.get("poster_path").toString();
-        String movieTrailerKey = this.getTrailer();
-
-        // add trailer and review button
-        InlineKeyboardButton trailerBtn = new InlineKeyboardButton("Trailer", "https://www.youtube.com/watch?v=" + movieTrailerKey, null,
-                                                        null, null, null, null, null);
-        InlineKeyboardButton watchReviewBtn = new InlineKeyboardButton("Watch reviews", null, "get_movieReview",
-                                                            null, null, null, null, null);
-        InlineKeyboardButton addToListBtn = new InlineKeyboardButton("Add to list", null, "add_to_list",
-                                                          null, null, null, null, null);
-
+        String text = "";
         List<InlineKeyboardButton> row1 = new ArrayList<>();
         List<InlineKeyboardButton> row2 = new ArrayList<>();
+
+        for (int i=5*index; i < (5*index + 5); i++) {
+            JSONObject movie = this.movieObjs.getJSONObject(i);
+            String movieName = movie.get("original_title").toString();
+
+            text += i + "/ " + movieName + "\n";
+            row1.add(new InlineKeyboardButton(String.valueOf(i), null, "movieIndex_" + i,
+                    null, null, null, null, null));
+        }
+
+        if ((index+1)*5 < this.movieObjs.length() - 1)
+            row2.add(new InlineKeyboardButton(">>", null, "movieList_forward_" + (index + 1),
+                    null, null, null, null, null));
+
         List<List<InlineKeyboardButton>> btnList = new ArrayList<>();
-        // check if it has no trailer
-        if (!movieTrailerKey.equals("No trailer found"))
-            row1.add(trailerBtn);
-        // check if is has no reviews
-        if (this.getUserReview())
-            row1.add(watchReviewBtn);
-        // check date if it is an upcoming movie
-        LocalDate releaseDate = LocalDate.parse((CharSequence) movieReleaseDate);
-        if (LocalDate.now().isBefore(releaseDate))
-            row1.add(addToListBtn);
-
-        if (this.currentMovieIndex > 0)
-            row2.add(new InlineKeyboardButton("<<", null, "movieList_backward",
-                    null, null, null, null, null));
-        if (this.currentMovieIndex < this.movieObjs.length()-1)
-            row2.add(new InlineKeyboardButton(">>", null, "movieList_forward",
-                    null, null, null, null, null));
-
-        btnList.add(row1);
-        btnList.add(row2);
+        btnList.add(row1); btnList.add(row2);
         InlineKeyboardMarkup allBtn = new InlineKeyboardMarkup(btnList);
 
-        // Format date
-        SimpleDateFormat input = new SimpleDateFormat("yyyy-MM-dd");
-        Date valueDate = input.parse(movieReleaseDate);
-        SimpleDateFormat output = new SimpleDateFormat("dd/MM/yyyy");
-        movieReleaseDate = output.format(valueDate);
+        SendMessage replyMessage = new SendMessage();
+        replyMessage.setChatId(chatID);
+        replyMessage.setReplyMarkup(allBtn);
+        replyMessage.setText(text);
 
+        this.previousMessage = (Object) replyMessage;
+        this.code = 0;
 
-        InputFile image = new InputFile("https://image.tmdb.org/t/p/original/" + movieImg);
-        SendPhoto reply = new SendPhoto(chatID, image);
-        reply.setCaption(movieName.toUpperCase() + "\n\n" +
-                         "Release date: " + movieReleaseDate + "\n\n" +
-                         "Rating: " + movieRating + "\n\n" +
-                         "Overview: " + movieOverview);
-        reply.setReplyMarkup(allBtn);
-        return reply;
+        return replyMessage;
     }
 
-    public EditMessageMedia displayMovieDetail(String chatID, long messageID) throws ParseException, UnirestException {
-        JSONObject detailMovie = this.movieObjs.getJSONObject(this.currentMovieIndex);
+    public EditMessageText displaySearchList(int index, String chatID, long messageID) {
+        String text = "";
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
+
+        for (int i=5*index; i < (5*index + 5); i++) {
+            JSONObject movie = this.movieObjs.getJSONObject(i);
+            String movieName = movie.get("original_title").toString();
+
+            text += i + "/ " + movieName + "\n";
+            row1.add(new InlineKeyboardButton(String.valueOf(i), null, "movieIndex_" + i,
+                    null, null, null, null, null));
+        }
+
+        if ((index-1)*5 >= 0)
+            row2.add(new InlineKeyboardButton("<<", null, "movieList_backward_" + (index - 1),
+                    null, null, null, null, null));
+        if ((index+1)*5 < this.movieObjs.length() - 1)
+            row2.add(new InlineKeyboardButton(">>", null, "movieList_forward_" + (index + 1),
+                    null, null, null, null, null));
+
+        List<List<InlineKeyboardButton>> btnList = new ArrayList<>();
+        btnList.add(row1); btnList.add(row2);
+        InlineKeyboardMarkup allBtn = new InlineKeyboardMarkup(btnList);
+
+        EditMessageText replyMessage = new EditMessageText();
+        replyMessage.setChatId(chatID);
+        replyMessage.setMessageId(Math.toIntExact(messageID));
+        replyMessage.setReplyMarkup(allBtn);
+        replyMessage.setText(text);
+
+        this.previousMessage = (Object) replyMessage;
+        this.code = 1;
+
+        return replyMessage;
+    }
+
+    public SendPhoto displayMovieDetail(int index, String chatID) throws ParseException, UnirestException {
+        JSONObject detailMovie = this.movieObjs.getJSONObject(index);
         String movieName = detailMovie.get("original_title").toString();
         String movieReleaseDate = detailMovie.get("release_date").toString();
         String movieOverview = detailMovie.get("overview").toString();
         String movieRating = detailMovie.get("vote_average").toString();
         String movieImg = detailMovie.get("poster_path").toString();
-        String movieTrailerKey = this.getTrailer();
+        String movieTrailerKey = this.getTrailer(index);
 
         // add trailer and review button
         InlineKeyboardButton trailerBtn = new InlineKeyboardButton("Trailer", "https://www.youtube.com/watch?v=" + movieTrailerKey, null,
                 null, null, null, null, null);
-        InlineKeyboardButton watchReviewBtn = new InlineKeyboardButton("Watch reviews", null, "get_movieReview",
+        InlineKeyboardButton watchReviewBtn = new InlineKeyboardButton("Watch reviews", null, "get_movieReview_" + index,
                 null, null, null, null, null);
-        InlineKeyboardButton addToListBtn = new InlineKeyboardButton("Add to list", null, "add_to_list",
+        InlineKeyboardButton addToListBtn = new InlineKeyboardButton("Add to list", null, "add_to_list_" + index,
                 null, null, null, null, null);
 
         List<InlineKeyboardButton> row1 = new ArrayList<>();
@@ -267,19 +276,17 @@ public class BotMovie {
         if (!movieTrailerKey.equals("No trailer found"))
             row1.add(trailerBtn);
         // check if is has no reviews
-        if (this.getUserReview())
+        if (this.getUserReview(index))
             row1.add(watchReviewBtn);
         // check date if it is an upcoming movie
-        LocalDate releaseDate = LocalDate.parse((CharSequence) detailMovie.get("release_date"));
-        if (LocalDate.now().isBefore(releaseDate))
-            row1.add(addToListBtn);
+        if (!movieReleaseDate.isEmpty()) {
+            LocalDate releaseDate = LocalDate.parse(movieReleaseDate);
+            if (LocalDate.now().isBefore(releaseDate))
+                row1.add(addToListBtn);
+        }
 
-        if (this.currentMovieIndex > 0)
-            row2.add(new InlineKeyboardButton("<<", null, "movieList_backward",
-                    null, null, null, null, null));
-        if (this.currentMovieIndex < this.movieObjs.length()-1)
-            row2.add(new InlineKeyboardButton(">>", null, "movieList_forward",
-                    null, null, null, null, null));
+        row2.add(new InlineKeyboardButton("Return", null, "movieList_return",
+                null, null, null, null, null));
 
         btnList.add(row1);
         btnList.add(row2);
@@ -292,17 +299,13 @@ public class BotMovie {
         SimpleDateFormat output = new SimpleDateFormat("dd/MM/yyyy");
         movieReleaseDate = output.format(valueDate);
 
-        InputMediaPhoto nextMovie = new InputMediaPhoto();
-        nextMovie.setCaption(movieName.toUpperCase() + "\n\n" +
-                             "Release date: " + movieReleaseDate + "\n\n" +
-                             "Rating: " + movieRating + "\n\n" +
-                             "Overview: " + movieOverview);
-        nextMovie.setMedia("https://image.tmdb.org/t/p/original/" + movieImg);
-        EditMessageMedia reply = new EditMessageMedia(  chatID,
-                                                        Math.toIntExact(messageID),
-                                                        null,
-                                                        nextMovie,
-                                                        allBtn);
+        InputFile image = new InputFile("https://image.tmdb.org/t/p/original/" + movieImg);
+        SendPhoto reply = new SendPhoto(chatID, image);
+        reply.setCaption(movieName.toUpperCase() + "\n\n" +
+                        "Release date: " + movieReleaseDate + "\n\n" +
+                        "Rating: " + movieRating + "\n\n" +
+                        "Overview: " + movieOverview);
+        reply.setReplyMarkup(allBtn);
         return reply;
     }
 
@@ -422,5 +425,27 @@ public class BotMovie {
                                                     + "\t:speaking_head_in_silhouette: Review: " + reviewTitle.toUpperCase() + "\n\n" + userReview));
         editText.setReplyMarkup(allBtn);
         return editText;
+    }
+
+    public SendMessage returnToList() {
+        String text = "";
+        String chatId = "";
+        InlineKeyboardMarkup allBtn = new InlineKeyboardMarkup();
+
+        if (this.code == 0) {
+            SendMessage message = (SendMessage) this.previousMessage;
+            text = message.getText();
+            chatId = message.getChatId();
+            allBtn = (InlineKeyboardMarkup) message.getReplyMarkup();
+        }
+        else {
+            EditMessageText message = (EditMessageText) this.previousMessage;
+            text = message.getText();
+            chatId = message.getChatId();
+            allBtn = message.getReplyMarkup();
+        }
+        SendMessage replyMessage = new SendMessage(chatId, text);
+        replyMessage.setReplyMarkup(allBtn);
+        return replyMessage;
     }
 }

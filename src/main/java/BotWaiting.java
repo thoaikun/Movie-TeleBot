@@ -1,3 +1,7 @@
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+
 import java.time.LocalDate;
 import java.util.*;
 
@@ -60,6 +64,49 @@ public class BotWaiting extends TimerTask {
                 return true;
         }
         return false;
+    }
+
+    public SendMessage displayMyList(String chatID) {
+        Object[] arrays = this.myWaitingList.toArray();
+        if (arrays.length == 0)
+            return new SendMessage(chatID, "List empty");
+
+        List<InlineKeyboardButton> row = new ArrayList<>();
+        String text = "";
+        for (int i=0; i < arrays.length; i++) {
+            upComingMovie movie = (upComingMovie) arrays[i];
+            text += i + "/ " + movie.name + "\n";
+            row.add(new InlineKeyboardButton(String.valueOf(i), null, "myListIndex_" + i,
+                    null, null, null, null, null));
+        }
+        String removeText = "Want remove some thing ? Click below: ";
+        text += removeText.toUpperCase(Locale.ROOT);
+
+        List<List<InlineKeyboardButton>> allBtn = new ArrayList<>();
+        allBtn.add(row);
+
+        SendMessage replyMessage = new SendMessage(chatID, text);
+        replyMessage.setReplyMarkup(new InlineKeyboardMarkup(allBtn));
+        return replyMessage;
+    }
+
+    public boolean removeFromList(int index) {
+        if (this.myWaitingList.isEmpty())
+            return false;
+
+        int count = 0;
+        List<upComingMovie> temp = new ArrayList<>();
+        while (!this.myWaitingList.isEmpty()) {
+            upComingMovie movie = this.myWaitingList.poll();
+            if (count != index) {
+                temp.add(movie);
+            }
+            count ++;
+        }
+
+        for (int i=0; i < temp.size(); i++)
+            this.myWaitingList.add(temp.get(i));
+        return true;
     }
 
     @Override
