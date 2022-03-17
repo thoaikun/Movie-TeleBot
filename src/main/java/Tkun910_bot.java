@@ -1,3 +1,4 @@
+import com.google.gson.JsonParser;
 import org.json.JSONObject;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
@@ -21,6 +22,7 @@ import java.util.*;
 public class Tkun910_bot extends TelegramLongPollingBot {
     private  BotMovie botMovie;
     private  BotWaiting botWaiting;
+    JobDetail job;
 
     public Tkun910_bot() {
         this.botMovie = new BotMovie();
@@ -205,7 +207,8 @@ public class Tkun910_bot extends TelegramLongPollingBot {
             upComingMovie upComingMovie = new upComingMovie(movie.get("original_title").toString(),
                     movie.get("release_date").toString(),
                     chatId);
-            this.botWaiting.addToList(new upComingMovie("hello", "2022-03-17", chatId));
+            this.botWaiting.addToList(new upComingMovie("hello", "2022-03-18", chatId));
+            this.botWaiting.addToList(new upComingMovie("hello", "2022-03-19", chatId));
             if (!this.botWaiting.isExist(upComingMovie)) {
                 this.botWaiting.addToList(upComingMovie);
                 SendMessage message = new SendMessage();

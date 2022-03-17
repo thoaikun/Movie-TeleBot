@@ -12,8 +12,6 @@ public class Main {
             myBot.runningCheck();
         } catch (TelegramApiException e) {
             e.printStackTrace();
-        } catch (SchedulerException e) {
-            e.printStackTrace();
         }
     }
 }
