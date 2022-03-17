@@ -1,3 +1,4 @@
+import org.quartz.SchedulerException;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
@@ -10,6 +11,8 @@ public class Main {
             botsApi.registerBot(myBot);
             myBot.runningCheck();
         } catch (TelegramApiException e) {
+            e.printStackTrace();
+        } catch (SchedulerException e) {
             e.printStackTrace();
         }
     }

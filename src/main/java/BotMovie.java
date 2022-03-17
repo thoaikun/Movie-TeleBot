@@ -53,7 +53,9 @@ public class BotMovie {
     public void getUpcoming() throws UnirestException {
         HttpResponse<JsonNode> response = Unirest.get(  "https://api.themoviedb.org/" +
                                                         "3/movie/upcoming" +
-                                                        "?api_key=" + this.API)
+                                                        "?api_key=" + this.API +
+                                                        "&language=en-US" +
+                                                        "&page=1" + "&region=US")
                                                  .asJson();
 
         this.movieObjs = response.getBody()
@@ -265,7 +267,7 @@ public class BotMovie {
                 null, null, null, null, null);
         InlineKeyboardButton watchReviewBtn = new InlineKeyboardButton("Watch reviews", null, "get_movieReview_" + index,
                 null, null, null, null, null);
-        InlineKeyboardButton addToListBtn = new InlineKeyboardButton("Add to list", null, "add_to_list_" + index,
+        InlineKeyboardButton addToListBtn = new InlineKeyboardButton("Add to list", null, "add_myList_" + index,
                 null, null, null, null, null);
 
         List<InlineKeyboardButton> row1 = new ArrayList<>();
