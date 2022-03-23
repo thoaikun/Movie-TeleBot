@@ -214,7 +214,7 @@ public class Tkun910_bot extends TelegramLongPollingBot {
             String TVShowSeason = receiveMessage.split(" " , 2)[1] ;
             TVShowSeason = TVShowSeason.replace(" " , "%20") ;
             this.botTV.searchSeason(TVShowSeason) ;
-            SendMessage replyMessage = this.botTV.ResultList(0, chatId);
+            SendMessage replyMessage = this.botTV.displaySearchList(0, chatId);
             execute(replyMessage);
 
         }
@@ -222,12 +222,12 @@ public class Tkun910_bot extends TelegramLongPollingBot {
             String TVShowName = receiveMessage.split(" ", 2)[1] ;
             TVShowName = TVShowName.replace(" " , "%20")  ;
             this.botTV.seachByName(TVShowName) ;
-            SendMessage replyMessage = this.botTV.ResultList(0, chatId);
+            SendMessage replyMessage = this.botTV.displaySearchList(0, chatId);
             execute(replyMessage);
         }
         else if (receiveMessage.contains("/trending_TVshow")) {
             this.botTV.SearchTrendingTVShows();
-            SendMessage replyMessage = this.botTV.ResultList(0, chatId);
+            SendMessage replyMessage = this.botTV.displaySearchList(0, chatId);
             execute(replyMessage);
         }
     }

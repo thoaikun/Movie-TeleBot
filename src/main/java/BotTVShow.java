@@ -110,7 +110,7 @@ public class BotTVShow {
         return messageStart ;
     }
 
-    public SendMessage ResultList(int index , String chatID){
+    public SendMessage displaySearchList(int index , String chatID){
        if (this.TVShowObject.isEmpty()) {
            SendMessage replyMessage = new SendMessage();
            replyMessage.setChatId(chatID);
@@ -148,7 +148,7 @@ public class BotTVShow {
        return replyMessage;
     }
 
-    public EditMessageText OtherResult(int index , String chatID , long messageID){
+    public EditMessageText displaySearchList(int index , String chatID , long messageID){
         String text = "";
         List<InlineKeyboardButton> row1 = new ArrayList<>();
         List<InlineKeyboardButton> row2 = new ArrayList<>();
