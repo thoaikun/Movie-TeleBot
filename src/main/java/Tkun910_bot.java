@@ -21,12 +21,14 @@ import java.util.*;
 
 public class Tkun910_bot extends TelegramLongPollingBot {
     private  BotMovie botMovie;
+    private  BotTVShow botTV ;
     private  BotWaiting botWaiting;
     JobDetail job;
 
     public Tkun910_bot() {
         this.botMovie = new BotMovie();
         this.botWaiting = new BotWaiting();
+        this.botTV = new BotTVShow();
     }
 
     @Override
@@ -61,6 +63,14 @@ public class Tkun910_bot extends TelegramLongPollingBot {
                     e.printStackTrace();
                 }
             }
+            else if (receiveMessage.contains("TVshow")){
+                try {
+                    callBotTV(receiveMessage , chatId , 0) ;
+                }
+                catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
             else if (receiveMessage.equals("/mylist")) {
                 try {
                     callBotWaiting(receiveMessage, chatId, 0);
@@ -78,6 +88,13 @@ public class Tkun910_bot extends TelegramLongPollingBot {
             if (receiveMessage.contains("movie")) {
                 try {
                     callBotMovie(receiveMessage, chatId, messageId);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            else if (receiveMessage.contains("TVshow")) {
+                try {
+                    callBotTV(receiveMessage, chatId, messageId);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -184,6 +201,34 @@ public class Tkun910_bot extends TelegramLongPollingBot {
         else if (receiveMessage.equals("delete_movieReview")) {
             DeleteMessage deleteMessage = new DeleteMessage(chatId, Math.toIntExact(messageId));
             execute(deleteMessage);
+        }
+    }
+
+    public void callBotTV(String receiveMessage , String chatId , long messageId) throws Exception{
+        if (receiveMessage.equals("get_TVshow")) {
+            //send message when click button
+            SendMessage replyMessage = this.botTV.getStart(chatId, Math.toIntExact(messageId));
+            execute(replyMessage);
+        }
+        else if (receiveMessage.contains("/TVshowSeason")){
+            String TVShowSeason = receiveMessage.split(" " , 2)[1] ;
+            TVShowSeason = TVShowSeason.replace(" " , "%20") ;
+            this.botTV.searchSeason(TVShowSeason) ;
+            SendMessage replyMessage = this.botTV.ResultList(0, chatId);
+            execute(replyMessage);
+
+        }
+        else if (receiveMessage.contains("/TVshowName")){
+            String TVShowName = receiveMessage.split(" ", 2)[1] ;
+            TVShowName = TVShowName.replace(" " , "%20")  ;
+            this.botTV.seachByName(TVShowName) ;
+            SendMessage replyMessage = this.botTV.ResultList(0, chatId);
+            execute(replyMessage);
+        }
+        else if (receiveMessage.contains("/trending_TVshow")) {
+            this.botTV.SearchTrendingTVShows();
+            SendMessage replyMessage = this.botTV.ResultList(0, chatId);
+            execute(replyMessage);
         }
     }
 
