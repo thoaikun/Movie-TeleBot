@@ -159,7 +159,7 @@ public class BotMovie {
         return "No trailer found";
     }
 
-    public EditMessageText getStart(String chatID, int messageID) {
+    public SendMessage getStart(String chatID) {
         // setting up for message
         String textMessage = EmojiParser.parseToUnicode(
                 "This is Mozziess :dog: :dog:, one of my bot cousin. He knows a lot of movies. If you want to find something, ask himm\n\n" +
@@ -168,11 +168,10 @@ public class BotMovie {
                         "Type /upcoming_movie to see which movie will release");
 
         // creat a editMessage
-        EditMessageText editText = new EditMessageText();
-        editText.setChatId(chatID);
-        editText.setMessageId(messageID);
-        editText.setText(textMessage);
-        return editText;
+        SendMessage message = new SendMessage();
+        message.setChatId(chatID);
+        message.setText(textMessage);
+        return message;
     }
 
     public SendMessage displaySearchList(int index, String chatID) {
@@ -188,7 +187,7 @@ public class BotMovie {
         List<InlineKeyboardButton> row1 = new ArrayList<>();
         List<InlineKeyboardButton> row2 = new ArrayList<>();
 
-        for (int i=5*index; i < (5*index + 5); i++) {
+        for (int i=5*index; i < Math.min(5*index + 5, this.movieObjs.length()); i++) {
             JSONObject movie = this.movieObjs.getJSONObject(i);
             String movieName = movie.get("original_title").toString();
 
@@ -221,7 +220,7 @@ public class BotMovie {
         List<InlineKeyboardButton> row1 = new ArrayList<>();
         List<InlineKeyboardButton> row2 = new ArrayList<>();
 
-        for (int i=5*index; i < (5*index + 5); i++) {
+        for (int i=5*index; i < Math.min(5*index + 5, this.movieObjs.length()); i++) {
             JSONObject movie = this.movieObjs.getJSONObject(i);
             String movieName = movie.get("original_title").toString();
 

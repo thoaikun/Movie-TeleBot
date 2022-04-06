@@ -2,6 +2,8 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -20,11 +22,18 @@ class upComingMovie {
 class MovieComparater implements Comparator<upComingMovie> {
     @Override
     public int compare(upComingMovie o1, upComingMovie o2) {
-        LocalDate o1Date = LocalDate.parse(o1.releaseDate);
-        LocalDate o2Date = LocalDate.parse(o2.releaseDate);
-        if (o1Date.isBefore(o2Date))
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date o1Date = null;
+        Date o2Date = null;
+        try {
+            o1Date = format.parse(o1.releaseDate);
+            o2Date = format.parse(o2.releaseDate);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        if (o1Date.before(o2Date))
             return -1;
-        else if (o1Date.isAfter(o2Date))
+        else if (o1Date.after(o2Date))
             return 1;
         else
             return 0;
@@ -111,18 +120,29 @@ public class BotWaiting extends TimerTask {
 
     @Override
     public void run() {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         while (!this.notifyList.isEmpty()) {
             upComingMovie movie = this.notifyList.peek();
-            LocalDate date = LocalDate.parse((CharSequence) movie.releaseDate);
-            if (LocalDate.now().isAfter(date))
+            Date date = null;
+            try {
+                date = format.parse(movie.releaseDate);
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+            if (new Date().after(date))
                 this.notifyList.poll();
             else
                 break;
         }
         while (!this.myWaitingList.isEmpty()) {
             upComingMovie movie = this.myWaitingList.peek();
-            LocalDate date = LocalDate.parse((CharSequence) movie.releaseDate);
-            if (LocalDate.now().isEqual(date))
+            Date date = null;
+            try {
+                date = format.parse(movie.releaseDate);
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+            if (new Date().equals(date) || new Date().after(date))
                 this.notifyList.add(this.myWaitingList.poll());
             else
                 break;

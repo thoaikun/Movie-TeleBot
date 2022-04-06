@@ -140,7 +140,7 @@ public class Tkun910_bot extends TelegramLongPollingBot {
 
     public void callBotMovie(String receiveMessage, String chatId, long messageId) throws Exception {
         if (receiveMessage.equals("get_movie")) {
-            EditMessageText replyMessage = this.botMovie.getStart(chatId, Math.toIntExact(messageId));
+            SendMessage replyMessage = this.botMovie.getStart(chatId);
             execute(replyMessage);
         }
         else if (receiveMessage.contains("/movie")) {
@@ -250,10 +250,10 @@ public class Tkun910_bot extends TelegramLongPollingBot {
             int index = Integer.parseInt(receiveMessage.split("_")[2]);
             JSONObject movie = this.botMovie.getMovie(index);
             upComingMovie upComingMovie = new upComingMovie(movie.get("original_title").toString(),
-                    movie.get("release_date").toString(),
+                    movie.get("release_date").toString() + " 00:00:00",
                     chatId);
-            this.botWaiting.addToList(new upComingMovie("hello", "2022-03-18", chatId));
-            this.botWaiting.addToList(new upComingMovie("hello", "2022-03-19", chatId));
+            this.botWaiting.addToList(new upComingMovie("hello", "2022-04-07 00:00:00", chatId));
+            this.botWaiting.addToList(new upComingMovie("hello", "2022-04-08 00:00:00", chatId));
             if (!this.botWaiting.isExist(upComingMovie)) {
                 this.botWaiting.addToList(upComingMovie);
                 SendMessage message = new SendMessage();
