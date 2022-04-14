@@ -1,23 +1,18 @@
-import com.google.gson.JsonParser;
 import org.json.JSONObject;
 import org.quartz.*;
-import org.quartz.impl.StdSchedulerFactory;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
-import org.telegram.telegrambots.meta.api.methods.send.SendVideo;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageMedia;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.bots.AbsSender;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import com.vdurmont.emoji.EmojiParser;
 
-import java.sql.Time;
 import java.util.*;
+import Objects.UpComingMovie;
 
 public class Tkun910_bot extends TelegramLongPollingBot {
     private  BotMovie botMovie;
@@ -153,17 +148,17 @@ public class Tkun910_bot extends TelegramLongPollingBot {
             movieName = movieName.replace(" ", "%20");
 
             // get an array of seached movie
-            this.botMovie.searchMovie(movieName);
+            this.botMovie.searchMovie(movieName, chatId);
             SendMessage replyMessage = this.botMovie.displaySearchList(0, chatId);
             execute(replyMessage);
         }
         else if (receiveMessage.equals("/trending_movie")) {
-            this.botMovie.getTrending();
+            this.botMovie.getTrending(chatId);
             SendMessage replyMessage = this.botMovie.displaySearchList(0, chatId);
             execute(replyMessage);
         }
         else if (receiveMessage.equals("/upcoming_movie")) {
-            this.botMovie.getUpcoming();
+            this.botMovie.getUpcoming(chatId);
             SendMessage replyMessage = this.botMovie.displaySearchList(0, chatId);
             execute(replyMessage);
         }
@@ -180,7 +175,7 @@ public class Tkun910_bot extends TelegramLongPollingBot {
             execute(replyMessage);
         }
         else if (receiveMessage.contains("movieList_return")) {
-            SendMessage replyMessage = this.botMovie.returnToList();
+            SendMessage replyMessage = this.botMovie.returnToList(chatId);
             DeleteMessage deleteMessage = new DeleteMessage(chatId, Math.toIntExact(messageId));
             execute(deleteMessage);
             execute(replyMessage);
@@ -248,12 +243,12 @@ public class Tkun910_bot extends TelegramLongPollingBot {
         }
         else if (receiveMessage.contains("add_myList_")) {
             int index = Integer.parseInt(receiveMessage.split("_")[2]);
-            JSONObject movie = this.botMovie.getMovie(index);
-            upComingMovie upComingMovie = new upComingMovie(movie.get("original_title").toString(),
+            JSONObject movie = this.botMovie.getMovie(index, chatId);
+            UpComingMovie upComingMovie = new UpComingMovie(movie.get("original_title").toString(),
                     movie.get("release_date").toString() + " 00:00:00",
                     chatId);
-            this.botWaiting.addToList(new upComingMovie("hello", "2022-04-07 00:00:00", chatId));
-            this.botWaiting.addToList(new upComingMovie("hello", "2022-04-08 00:00:00", chatId));
+            this.botWaiting.addToList(new UpComingMovie("hello", "2022-04-19 00:00:00", chatId));
+            this.botWaiting.addToList(new UpComingMovie("hello2", "2022-04-17 00:00:00", chatId));
             if (!this.botWaiting.isExist(upComingMovie)) {
                 this.botWaiting.addToList(upComingMovie);
                 SendMessage message = new SendMessage();
@@ -282,21 +277,21 @@ public class Tkun910_bot extends TelegramLongPollingBot {
         /*
             Class use to check whether a movie in BotWaiting is releases
          */
-        private Queue<upComingMovie> list;
+        private Queue<UpComingMovie> list;
 
-        public Checker(Queue<upComingMovie> l) {
+        public Checker(Queue<UpComingMovie> l) {
             this.list = l;
         }
 
         @Override
         public void run() {
-            List<upComingMovie> temp = new ArrayList<>();
+            List<UpComingMovie> temp = new ArrayList<>();
             while (!this.list.isEmpty()) {
-                upComingMovie movie = this.list.poll();
+                UpComingMovie movie = this.list.poll();
                 temp.add(movie);
                 SendMessage message = new SendMessage();
-                message.setChatId(movie.chatId);
-                message.setText("Movie: " + movie.name + " has been released, check it now!!");
+                message.setChatId(movie.getChatId());
+                message.setText("Movie: " + movie.getName() + " has been released, check it now!!");
                 try {
                     execute(message);
                 } catch (TelegramApiException e) {
