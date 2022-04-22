@@ -4,30 +4,19 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.util.*;
 
-class upComingMovie {
-    String name;
-    String releaseDate;
-    String chatId;
+import Objects.UpComingMovie;
 
-    public upComingMovie(String n, String r, String chatId) {
-        this.name = n;
-        this.releaseDate = r;
-        this.chatId = chatId;
-    }
-}
-
-class MovieComparater implements Comparator<upComingMovie> {
+class MovieComparater implements Comparator<UpComingMovie> {
     @Override
-    public int compare(upComingMovie o1, upComingMovie o2) {
+    public int compare(UpComingMovie o1, UpComingMovie o2) {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date o1Date = null;
         Date o2Date = null;
         try {
-            o1Date = format.parse(o1.releaseDate);
-            o2Date = format.parse(o2.releaseDate);
+            o1Date = format.parse(o1.getReleaseDate());
+            o2Date = format.parse(o2.getReleaseDate());
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -41,35 +30,35 @@ class MovieComparater implements Comparator<upComingMovie> {
 }
 
 public class BotWaiting extends TimerTask {
-    private PriorityQueue<upComingMovie> myWaitingList;
-    private Queue<upComingMovie> notifyList;
+    private PriorityQueue<UpComingMovie> myWaitingList;
+    private Queue<UpComingMovie> notifyList;
 
     public BotWaiting() {
-        this.myWaitingList = new PriorityQueue<upComingMovie>(5, new MovieComparater());
+        this.myWaitingList = new PriorityQueue<UpComingMovie>(5, new MovieComparater());
         this.notifyList = new ArrayDeque<>();
     }
 
     public boolean addToList(String name, String releaseDate, String chatId) {
-        if (this.myWaitingList.add(new upComingMovie(name, releaseDate, chatId)))
+        if (this.myWaitingList.add(new UpComingMovie(name, releaseDate, chatId)))
             return true;
         return false;
     }
 
-    public boolean addToList(upComingMovie movie) {
+    public boolean addToList(UpComingMovie movie) {
         if (this.myWaitingList.add(movie))
             return true;
         return false;
     }
 
-    public Queue<upComingMovie> getNotifyList() {
+    public Queue<UpComingMovie> getNotifyList() {
         return this.notifyList;
     }
 
-    public boolean isExist(upComingMovie movie) {
+    public boolean isExist(UpComingMovie movie) {
         Object[] arrays = this.myWaitingList.toArray();
         for (int i=0; i < arrays.length; i++) {
-            upComingMovie upComingMovie = (upComingMovie) arrays[i];
-            if (upComingMovie.name.equals(movie.name))
+            UpComingMovie UpComingMovie = (UpComingMovie) arrays[i];
+            if (UpComingMovie.getName().equals(movie.getName()))
                 return true;
         }
         return false;
@@ -83,8 +72,8 @@ public class BotWaiting extends TimerTask {
         List<InlineKeyboardButton> row = new ArrayList<>();
         String text = "";
         for (int i=0; i < arrays.length; i++) {
-            upComingMovie movie = (upComingMovie) arrays[i];
-            text += i + "/ " + movie.name + "\n";
+            UpComingMovie movie = (UpComingMovie) arrays[i];
+            text += i + "/ " + movie.getName() + "\n";
             row.add(new InlineKeyboardButton(String.valueOf(i), null, "myListIndex_" + i,
                     null, null, null, null, null));
         }
@@ -104,9 +93,9 @@ public class BotWaiting extends TimerTask {
             return false;
 
         int count = 0;
-        List<upComingMovie> temp = new ArrayList<>();
+        List<UpComingMovie> temp = new ArrayList<>();
         while (!this.myWaitingList.isEmpty()) {
-            upComingMovie movie = this.myWaitingList.poll();
+            UpComingMovie movie = this.myWaitingList.poll();
             if (count != index) {
                 temp.add(movie);
             }
@@ -122,10 +111,10 @@ public class BotWaiting extends TimerTask {
     public void run() {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         while (!this.notifyList.isEmpty()) {
-            upComingMovie movie = this.notifyList.peek();
+            UpComingMovie movie = this.notifyList.peek();
             Date date = null;
             try {
-                date = format.parse(movie.releaseDate);
+                date = format.parse(movie.getReleaseDate());
             } catch (ParseException e) {
                 e.printStackTrace();
             }
@@ -135,10 +124,10 @@ public class BotWaiting extends TimerTask {
                 break;
         }
         while (!this.myWaitingList.isEmpty()) {
-            upComingMovie movie = this.myWaitingList.peek();
+            UpComingMovie movie = this.myWaitingList.peek();
             Date date = null;
             try {
-                date = format.parse(movie.releaseDate);
+                date = format.parse(movie.getReleaseDate());
             } catch (ParseException e) {
                 e.printStackTrace();
             }

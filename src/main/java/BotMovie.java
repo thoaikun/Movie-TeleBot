@@ -1,3 +1,5 @@
+import Objects.UserData;
+import com.google.gson.JsonObject;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
@@ -20,37 +22,38 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 public class BotMovie {
     private final static String API = "16e8d32a627987825706488073388e2e";
 
-    private JSONArray movieObjs;
-    private JSONArray reviewObjs;
-    private Object previousMessage;
+    private HashMap<String, UserData> userData;
+    private HashMap<String, Object> messageHistory;
     private int code;
 
     public BotMovie() {
-        this.movieObjs = new JSONArray();
-        this.reviewObjs = new JSONArray();
+        this.userData = new HashMap<>();
+        this.messageHistory = new HashMap<>();
     }
 
-    public JSONArray getMovieObjs() { return this.movieObjs; }
-    public JSONArray getReviewObjs() { return this.reviewObjs; }
-
-    public void searchMovie(String movieName) throws UnirestException {
+    public void searchMovie(String movieName, String chatId) throws UnirestException {
         HttpResponse<JsonNode> response = Unirest.get(  "https://api.themoviedb.org/" +
                                                         "3/search/movie" +
                                                         "?api_key=" + this.API +
                                                         "&query=" + movieName)
                                                  .asJson();
 
-        this.movieObjs = response.getBody()
+        JSONArray results = response.getBody()
                                  .getObject()
                                  .getJSONArray("results");
+        if (this.userData.containsKey(chatId))
+            this.userData.get(chatId).setMovieObjs(results);
+        else
+            this.userData.put(chatId, new UserData(results));
     }
 
-    public void getUpcoming() throws UnirestException {
+    public void getUpcoming(String chatId) throws UnirestException {
         HttpResponse<JsonNode> response = Unirest.get(  "https://api.themoviedb.org/" +
                                                         "3/movie/upcoming" +
                                                         "?api_key=" + this.API +
@@ -58,29 +61,38 @@ public class BotMovie {
                                                         "&page=1" + "&region=US")
                                                  .asJson();
 
-        this.movieObjs = response.getBody()
-                .getObject()
-                .getJSONArray("results");
+        JSONArray results = response.getBody()
+                                    .getObject()
+                                    .getJSONArray("results");
+        if (this.userData.containsKey(chatId))
+            this.userData.get(chatId).setMovieObjs(results);
+        else
+            this.userData.put(chatId, new UserData(results));
     }
 
-    public void getTrending() throws UnirestException {
+    public void getTrending(String chatId) throws UnirestException {
         HttpResponse<JsonNode> response = Unirest.get(  "https://api.themoviedb.org/" +
-                        "3/trending/movie/week" +
-                        "?api_key=" + this.API)
-                .asJson();
+                                                        "3/trending/movie/week" +
+                                                        "?api_key=" + this.API)
+                                                        .asJson();
 
-        this.movieObjs = response.getBody()
-                                 .getObject()
-                                 .getJSONArray("results");
+        JSONArray results = response.getBody()
+                                     .getObject()
+                                     .getJSONArray("results");
+        if (this.userData.containsKey(chatId))
+            this.userData.get(chatId).setMovieObjs(results);
+        else
+            this.userData.put(chatId, new UserData(results));
     }
 
-    public boolean getUserReview(int index) throws UnirestException {
+    public boolean getUserReview(int index, String chatId) throws UnirestException {
         /*
             Because MovieDb has small number of review so we will use RapidAPI to get Review from IMDB
             So first we need to get movie id on rapidAPI then get it review
          */
-        String movieName = this.movieObjs.getJSONObject(index).get("original_title").toString();
-        String movieYear = this.movieObjs.getJSONObject(index).get("release_date").toString();
+        JSONArray movieObjs = this.userData.get(chatId).getMovieObjs();
+        String movieName = movieObjs.getJSONObject(index).get("original_title").toString();
+        String movieYear = movieObjs.getJSONObject(index).get("release_date").toString();
         movieYear = movieYear.split("-")[0];
         movieName = movieName.replace(" ", "%20");
 
@@ -118,16 +130,15 @@ public class BotMovie {
 
         JSONObject temp = response.getBody().getObject();
         if (temp.has("reviews")) {
-            this.reviewObjs = temp.getJSONArray("reviews");
+            this.userData.get(chatId).setReviewObjs(temp.getJSONArray("reviews"));
             return true;
         }
         return false;
     }
 
-    public JSONObject getMovie(int index) { return this.movieObjs.getJSONObject(index); }
-
-    private String getTrailer(int index) throws UnirestException {
-        JSONObject detailMovie = this.movieObjs.getJSONObject(index);
+    private String getTrailer(int index, String chatId) throws UnirestException {
+        JSONArray movieObjs = this.userData.get(chatId).getMovieObjs();
+        JSONObject detailMovie = movieObjs.getJSONObject(index);
         String movieId = detailMovie.get("id").toString();
 
         HttpResponse<JsonNode> response = Unirest.get(  "https://api.themoviedb.org/" +
@@ -159,6 +170,11 @@ public class BotMovie {
         return "No trailer found";
     }
 
+    public JSONObject getMovie(int index, String chatId) {
+        JSONArray movieObjs = this.userData.get(chatId).getMovieObjs();
+        return movieObjs.getJSONObject(index);
+    }
+
     public SendMessage getStart(String chatID) {
         // setting up for message
         String textMessage = EmojiParser.parseToUnicode(
@@ -175,7 +191,8 @@ public class BotMovie {
     }
 
     public SendMessage displaySearchList(int index, String chatID) {
-        if (this.movieObjs.isEmpty()) {
+        JSONArray searchedList = this.userData.get(chatID).getMovieObjs();
+        if (searchedList.isEmpty()) {
             SendMessage replyMessage = new SendMessage();
             replyMessage.setChatId(chatID);
             replyMessage.setText(EmojiParser.parseToUnicode("OPPP!!! Sorry I don't see that movie :cry: :cry: \n " +
@@ -187,8 +204,8 @@ public class BotMovie {
         List<InlineKeyboardButton> row1 = new ArrayList<>();
         List<InlineKeyboardButton> row2 = new ArrayList<>();
 
-        for (int i=5*index; i < Math.min(5*index + 5, this.movieObjs.length()); i++) {
-            JSONObject movie = this.movieObjs.getJSONObject(i);
+        for (int i=5*index; i < Math.min(5*index + 5, searchedList.length()); i++) {
+            JSONObject movie = searchedList.getJSONObject(i);
             String movieName = movie.get("original_title").toString();
 
             text += i + "/ " + movieName + "\n";
@@ -196,7 +213,7 @@ public class BotMovie {
                     null, null, null, null, null));
         }
 
-        if ((index+1)*5 < this.movieObjs.length() - 1)
+        if ((index+1)*5 < searchedList.length() - 1)
             row2.add(new InlineKeyboardButton(">>", null, "movieList_forward_" + (index + 1),
                     null, null, null, null, null));
 
@@ -209,19 +226,20 @@ public class BotMovie {
         replyMessage.setReplyMarkup(allBtn);
         replyMessage.setText(text);
 
-        this.previousMessage = (Object) replyMessage;
+        this.messageHistory.put(replyMessage.getChatId(), replyMessage);
         this.code = 0;
 
         return replyMessage;
     }
 
     public EditMessageText displaySearchList(int index, String chatID, long messageID) {
+        JSONArray searchedList = this.userData.get(chatID).getMovieObjs();
         String text = "";
         List<InlineKeyboardButton> row1 = new ArrayList<>();
         List<InlineKeyboardButton> row2 = new ArrayList<>();
 
-        for (int i=5*index; i < Math.min(5*index + 5, this.movieObjs.length()); i++) {
-            JSONObject movie = this.movieObjs.getJSONObject(i);
+        for (int i=5*index; i < Math.min(5*index + 5, searchedList.length()); i++) {
+            JSONObject movie = searchedList.getJSONObject(i);
             String movieName = movie.get("original_title").toString();
 
             text += i + "/ " + movieName + "\n";
@@ -232,7 +250,7 @@ public class BotMovie {
         if ((index-1)*5 >= 0)
             row2.add(new InlineKeyboardButton("<<", null, "movieList_backward_" + (index - 1),
                     null, null, null, null, null));
-        if ((index+1)*5 < this.movieObjs.length() - 1)
+        if ((index+1)*5 < searchedList.length() - 1)
             row2.add(new InlineKeyboardButton(">>", null, "movieList_forward_" + (index + 1),
                     null, null, null, null, null));
 
@@ -246,20 +264,21 @@ public class BotMovie {
         replyMessage.setReplyMarkup(allBtn);
         replyMessage.setText(text);
 
-        this.previousMessage = (Object) replyMessage;
+        this.messageHistory.put(replyMessage.getChatId(), replyMessage);
         this.code = 1;
 
         return replyMessage;
     }
 
     public SendPhoto displayMovieDetail(int index, String chatID) throws ParseException, UnirestException {
-        JSONObject detailMovie = this.movieObjs.getJSONObject(index);
+        JSONArray searchedList = this.userData.get(chatID).getMovieObjs();
+        JSONObject detailMovie = searchedList.getJSONObject(index);
         String movieName = detailMovie.get("original_title").toString();
         String movieReleaseDate = detailMovie.get("release_date").toString();
         String movieOverview = detailMovie.get("overview").toString();
         String movieRating = detailMovie.get("vote_average").toString();
         String movieImg = detailMovie.get("poster_path").toString();
-        String movieTrailerKey = this.getTrailer(index);
+        String movieTrailerKey = this.getTrailer(index, chatID);
 
         // add trailer and review button
         InlineKeyboardButton trailerBtn = new InlineKeyboardButton("Trailer", "https://www.youtube.com/watch?v=" + movieTrailerKey, null,
@@ -277,7 +296,7 @@ public class BotMovie {
         if (!movieTrailerKey.equals("No trailer found"))
             row1.add(trailerBtn);
         // check if is has no reviews
-        if (this.getUserReview(index))
+        if (this.getUserReview(index, chatID))
             row1.add(watchReviewBtn);
         // check date if it is an upcoming movie
         if (!movieReleaseDate.isEmpty()) {
@@ -311,10 +330,11 @@ public class BotMovie {
     }
 
     public SendMessage displayReview(int index, String chatID, long messageId) {
+        JSONArray reviewObjs = this.userData.get(chatID).getReviewObjs();
         String userPoint = "unknown", userName = "", userReview = "", reviewTitle = "";
 
         // check whether it has review or not
-        if (this.reviewObjs.length() == 0) {
+        if (reviewObjs.length() == 0) {
             SendMessage replyMessage = new SendMessage();
             replyMessage.setChatId(chatID);
             replyMessage.setText(EmojiParser.parseToUnicode("No one watches this movie you stupid head  :clown: :clown: !!\n\nGet you ass out of here"));
@@ -325,7 +345,7 @@ public class BotMovie {
         JSONObject review;
         int length;
         do {
-            review = this.reviewObjs.getJSONObject(index);
+            review = reviewObjs.getJSONObject(index);
             length = review.get("reviewText").toString().length();
             index ++;
         } while (length > 4000);
@@ -346,7 +366,7 @@ public class BotMovie {
         List<InlineKeyboardButton> row1 = new ArrayList<>();
         List<InlineKeyboardButton> row2 = new ArrayList<>();
         List<List<InlineKeyboardButton>> btnList = new ArrayList<>();
-        if (this.reviewObjs.length() > (index + 1)) {
+        if (reviewObjs.length() > (index + 1)) {
             InlineKeyboardButton forwardBtn = new InlineKeyboardButton(">>", null, "movieReview_forward_" + (index+1),
                                                             null, null, null, null, null);
             row1.add(forwardBtn);
@@ -369,13 +389,14 @@ public class BotMovie {
     }
 
     public EditMessageText displayReview(int index, String chatID, int messageID, boolean isBackward) {
+        JSONArray reviewObjs = this.userData.get(chatID).getReviewObjs();
         String userPoint = "unknown", userName = "", userReview = "", reviewTitle = "";
         JSONObject review;
         int length;
 
         // check the length of each review, if it to long, pass to another review
         do {
-            review = this.reviewObjs.getJSONObject(index);
+            review = reviewObjs.getJSONObject(index);
             length = review.get("reviewText").toString().length();
             if (!isBackward)
                 ++index;
@@ -405,7 +426,7 @@ public class BotMovie {
                                                             null, null, null, null, null);
             row1.add(backwardBtn);
         }
-        if (index+1 < this.reviewObjs.length()) {
+        if (index+1 < reviewObjs.length()) {
             InlineKeyboardButton forwardBtn = new InlineKeyboardButton(">>", null, "movieReview_forward_" + (index+1),
                                                             null, null, null, null, null);
             row1.add(forwardBtn);
@@ -428,21 +449,18 @@ public class BotMovie {
         return editText;
     }
 
-    public SendMessage returnToList() {
+    public SendMessage returnToList(String chatId) {
         String text = "";
-        String chatId = "";
         InlineKeyboardMarkup allBtn = new InlineKeyboardMarkup();
 
         if (this.code == 0) {
-            SendMessage message = (SendMessage) this.previousMessage;
+            SendMessage message = (SendMessage) this.messageHistory.get(chatId);
             text = message.getText();
-            chatId = message.getChatId();
             allBtn = (InlineKeyboardMarkup) message.getReplyMarkup();
         }
         else {
-            EditMessageText message = (EditMessageText) this.previousMessage;
+            EditMessageText message = (EditMessageText) this.messageHistory.get(chatId);
             text = message.getText();
-            chatId = message.getChatId();
             allBtn = message.getReplyMarkup();
         }
         SendMessage replyMessage = new SendMessage(chatId, text);
