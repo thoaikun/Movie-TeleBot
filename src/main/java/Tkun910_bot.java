@@ -23,12 +23,14 @@ public class Tkun910_bot extends TelegramLongPollingBot {
     private  BotMovie botMovie;
     private  BotTVShow botTV ;
     private  BotWaiting botWaiting;
+    private  BotNews botNews;
     JobDetail job;
 
     public Tkun910_bot() {
         this.botMovie = new BotMovie();
         this.botWaiting = new BotWaiting();
         this.botTV = new BotTVShow();
+        this.botNews = new BotNews();
     }
 
     @Override
@@ -71,6 +73,16 @@ public class Tkun910_bot extends TelegramLongPollingBot {
                     e.printStackTrace();
                 }
             }
+            else if (receiveMessage.equals("/news")
+                    || receiveMessage.equals("/hot_news")
+                    || receiveMessage.startsWith("/search_news")){
+                try {
+                    callBotNews(receiveMessage , chatId , 0);
+                }
+                catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
             else if (receiveMessage.equals("/mylist")) {
                 try {
                     callBotWaiting(receiveMessage, chatId, 0);
@@ -102,6 +114,13 @@ public class Tkun910_bot extends TelegramLongPollingBot {
             else if (receiveMessage.contains("myList")) {
                 try {
                     callBotWaiting(receiveMessage, chatId, messageId);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            else if (receiveMessage.contains("news")) {
+                try {
+                    callBotNews(receiveMessage, chatId, (int)messageId);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -278,6 +297,57 @@ public class Tkun910_bot extends TelegramLongPollingBot {
         }
     }
 
+    public void callBotNews(String receiveMessage, String chatId, int messageId) throws Exception {
+    	if (receiveMessage.equals("get_news") || receiveMessage.equals("/news")) {
+            SendMessage replyMessage = this.botNews.introMessage(chatId);
+            execute(replyMessage);
+        }
+        else if (receiveMessage.startsWith("/search_news")) {
+            // take movie name from user message
+            String[] arr = receiveMessage.split(" ", 2);
+            if (arr.length<2) {
+                execute(new SendMessage(chatId, "Please enter keywords for us to searching"));
+                return;
+            }
+
+            int n = this.botNews.searchNews(chatId, arr[1]);
+            if (n==0) {
+                this.botNews.updatePageTable(chatId, 0, false);
+                execute(new SendMessage(chatId, "Sorry, we don't find any information about your search"));
+            }
+            else {
+                SendPhoto replyMessage = this.botNews.displayNews(chatId, 0, false);
+                execute(replyMessage);
+            }
+        }
+        else if (receiveMessage.equals("/hot_news")) {
+            this.botNews.getHotNews();
+            SendPhoto replyMessage = this.botNews.displayNews(chatId, 0, true);
+            execute(replyMessage);
+        }
+        else if (receiveMessage.equals("previous_hot_news")) {
+            int desPage = botNews.movePageHotNews(chatId, -1);
+            EditMessageMedia replyMessage = botNews.displayNews(chatId, messageId, desPage, true);
+            execute(replyMessage);
+        }
+        else if (receiveMessage.equals("next_hot_news")) {
+            int desPage = botNews.movePageHotNews(chatId, 1);
+            EditMessageMedia replyMessage = botNews.displayNews(chatId, messageId, desPage, true);
+            execute(replyMessage);
+        }
+        else if (receiveMessage.equals("previous_search_news")) {
+            int desPage = botNews.movePageSearchNews(chatId, -1);
+            EditMessageMedia replyMessage = botNews.displayNews(chatId, messageId, desPage, false);
+            execute(replyMessage);
+        }
+        else if (receiveMessage.equals("next_search_news")) {
+            int desPage = botNews.movePageSearchNews(chatId, 1);
+
+            EditMessageMedia replyMessage = botNews.displayNews(chatId, messageId, desPage, false);
+            execute(replyMessage);
+        }
+    }
+    
     class Checker extends TimerTask {
         /*
             Class use to check whether a movie in BotWaiting is releases

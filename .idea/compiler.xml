@@ -7,6 +7,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="Test" />
+        <module name="Movie-TeleBot-1" />
         <module name="MovieBot" />
       </profile>
     </annotationProcessing>
