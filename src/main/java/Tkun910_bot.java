@@ -1,11 +1,11 @@
+import Controller.MovieController;
+import Controller.ShowController;
 import org.json.JSONObject;
-import org.quartz.*;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageMedia;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
@@ -13,19 +13,18 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import com.vdurmont.emoji.EmojiParser;
 
 import java.util.*;
-import Objects.UpComingMovie;
+import Objects.UpComing;
 
 public class Tkun910_bot extends TelegramLongPollingBot {
-    private  BotMovie botMovie;
-    private  BotTVShow botTV ;
+    private MovieController movieController;
+    private ShowController showController;
     private  BotWaiting botWaiting;
     private  BotNews botNews;
-    JobDetail job;
 
     public Tkun910_bot() {
-        this.botMovie = new BotMovie();
+        this.movieController = new MovieController();
+        this.showController = new ShowController();
         this.botWaiting = new BotWaiting();
-        this.botTV = new BotTVShow();
         this.botNews = new BotNews();
     }
 
@@ -90,33 +89,33 @@ public class Tkun910_bot extends TelegramLongPollingBot {
         }
         else if (update.hasCallbackQuery()) {
             String receiveMessage = update.getCallbackQuery().getData();
-            String chatId = update.getCallbackQuery().getMessage().getChatId().toString();
-            long messageId = update.getCallbackQuery().getMessage().getMessageId();
+            String chatID = update.getCallbackQuery().getMessage().getChatId().toString();
+            long messageID = update.getCallbackQuery().getMessage().getMessageId();
 
             if (receiveMessage.contains("movie")) {
                 try {
-                    callBotMovie(receiveMessage, chatId, messageId);
+                    callBotMovie(receiveMessage, chatID, messageID);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
             else if (receiveMessage.contains("TVshow")) {
                 try {
-                    callBotTV(receiveMessage, chatId, messageId);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            else if (receiveMessage.contains("myList")) {
-                try {
-                    callBotWaiting(receiveMessage, chatId, messageId);
+                    callBotTV(receiveMessage, chatID, messageID);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
             else if (receiveMessage.contains("news")) {
                 try {
-                    callBotNews(receiveMessage, chatId, (int)messageId);
+                    callBotNews(receiveMessage, chatID, (int)messageID);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            else if (receiveMessage.contains("myList")) {
+                try {
+                    callBotWaiting(receiveMessage, chatID, messageID);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -124,7 +123,7 @@ public class Tkun910_bot extends TelegramLongPollingBot {
         }
     }
 
-    public SendMessage welcomeMessage(String chatID) {
+    private SendMessage welcomeMessage(String chatID) {
         // create InlineButton
         InlineKeyboardButton movieBtn = new InlineKeyboardButton("Movies", null, "get_movie", null, null, null, null, null);
         InlineKeyboardButton TvshowBtn = new InlineKeyboardButton("TVShows", null, "get_TVshow", null, null, null, null, null);
@@ -153,126 +152,137 @@ public class Tkun910_bot extends TelegramLongPollingBot {
         return message;
     }
 
-    public void callBotMovie(String receiveMessage, String chatId, long messageId) throws Exception {
-        if (receiveMessage.equals("get_movie")) {
-            SendMessage replyMessage = this.botMovie.getStart(chatId);
-            execute(replyMessage);
-        }
-        else if (receiveMessage.contains("/movie")) {
-            // take movie name from user message
-            String movieName = receiveMessage.split(" ", 2)[1];
-            if (movieName.isEmpty()) {
-                execute(new SendMessage(chatId, "Please enter movie name"));
-                return;
-            }
-            movieName = movieName.replace(" ", "%20");
-
-            // get an array of seached movie
-            this.botMovie.searchMovie(movieName, chatId);
-            SendMessage replyMessage = this.botMovie.displaySearchList(0, chatId);
-            execute(replyMessage);
-        }
-        else if (receiveMessage.equals("/trending_movie")) {
-            this.botMovie.getTrending(chatId);
-            SendMessage replyMessage = this.botMovie.displaySearchList(0, chatId);
-            execute(replyMessage);
-        }
-        else if (receiveMessage.equals("/upcoming_movie")) {
-            this.botMovie.getUpcoming(chatId);
-            SendMessage replyMessage = this.botMovie.displaySearchList(0, chatId);
-            execute(replyMessage);
-        }
-        else if (receiveMessage.contains("movieList_forward_") || receiveMessage.contains("movieList_backward_")) {
-            int index = Integer.parseInt(receiveMessage.split("_")[2]);
-            EditMessageText replyMessage = this.botMovie.displaySearchList(index, chatId, messageId);
-            execute(replyMessage);
-        }
+    private void callBotMovie(String receiveMessage, String chatID, long messageID) throws Exception {
+        if (receiveMessage.equals("get_movie"))
+            execute(this.movieController.sendWelcome(chatID));
+        else if (receiveMessage.contains("/movie"))
+            execute(this.movieController.sendSearchList(receiveMessage, chatID));
+        else if (receiveMessage.equals("/trending_movie"))
+            execute(this.movieController.sendTrendingList(chatID));
+        else if (receiveMessage.equals("/upcoming_movie"))
+            execute(this.movieController.sendUpcomingList(chatID));
+        else if (receiveMessage.contains("movieList_forward_") || receiveMessage.contains("movieList_backward_"))
+            execute(this.movieController.sendEditList(receiveMessage, chatID, messageID));
         else if (receiveMessage.contains("movieIndex_")) {
-            int index = Integer.parseInt(receiveMessage.split("_")[1]);
-            SendPhoto replyMessage = this.botMovie.displayMovieDetail(index, chatId);
-            DeleteMessage deleteMessage = new DeleteMessage(chatId, Math.toIntExact(messageId));
-            execute(deleteMessage);
-            execute(replyMessage);
+            execute(this.movieController.deleteMessage(chatID, messageID));
+            execute(this.movieController.sendDetail(receiveMessage, chatID));
         }
         else if (receiveMessage.contains("movieList_return")) {
-            SendMessage replyMessage = this.botMovie.returnToList(chatId);
-            DeleteMessage deleteMessage = new DeleteMessage(chatId, Math.toIntExact(messageId));
-            execute(deleteMessage);
+            execute(this.movieController.deleteMessage(chatID, messageID));
+            execute(this.movieController.returnToList(chatID));
+        }
+        else if (receiveMessage.contains("get_movieReview"))
+            execute(this.movieController.sendReviews(chatID));
+        else if (receiveMessage.contains("movieReview_forward_") || receiveMessage.contains("movieReview_backward_"))
+            execute(this.movieController.sendReviews(receiveMessage, chatID, messageID));
+        else if (receiveMessage.equals("delete_movieReview"))
+            execute(this.movieController.deleteMessage(chatID, messageID));
+    }
+
+    private void callBotTV(String receiveMessage , String chatID , long messageID) throws Exception{
+        if (receiveMessage.equals("get_TVshow"))
+            execute(this.showController.sendWelcome(chatID));
+        else if (receiveMessage.contains("/TVshow"))
+            execute(this.showController.sendSearchList(receiveMessage, chatID));
+        if (receiveMessage.contains("/TVshowOnTheAir"))
+            execute(this.showController.sendOnAirList(chatID));
+        else if (receiveMessage.contains("/trending_TVshow"))
+            execute(this.showController.sendTrendingList(chatID));
+        else if (receiveMessage.contains("TVshow_forward_") || receiveMessage.contains("TVshow_backward_"))
+            execute(this.showController.sendEditList(receiveMessage, chatID, messageID));
+        else if (receiveMessage.contains("TVshowIndex_")) {
+            execute(this.showController.deleteMessage(chatID, messageID));
+            execute(this.showController.sendDetail(receiveMessage, chatID));
+        }
+        else if (receiveMessage.contains("TVshowList_return")) {
+            execute(this.showController.deleteMessage(chatID, messageID));
+            execute(this.showController.returnToList(chatID));
+        }
+        else if (receiveMessage.contains("TVshow_get_user_review"))
+            execute(this.showController.sendReviews(chatID));
+        else if (receiveMessage.contains("TVshowReview_forward_") || receiveMessage.contains("TVshowReview_backward_"))
+            execute(this.showController.sendReviews(receiveMessage, chatID, messageID));
+        else if (receiveMessage.equals("delete_TVshowReview"))
+            execute(this.showController.deleteMessage(chatID, messageID));
+    }
+
+    public void callBotNews(String receiveMessage, String chatID, int messageID) throws Exception {
+        if (receiveMessage.equals("get_news") || receiveMessage.equals("/news")) {
+            SendMessage replyMessage = this.botNews.introMessage(chatID);
             execute(replyMessage);
         }
-        else if (receiveMessage.contains("get_movieReview")) {
-            SendMessage message = this.botMovie.displayReview(0, chatId, messageId);
-            execute(message);
+        else if (receiveMessage.startsWith("/search_news")) {
+            // take movie name from user message
+            String[] arr = receiveMessage.split(" ", 2);
+            if (arr.length<2) {
+                execute(new SendMessage(chatID, "Please enter keywords for us to searching"));
+                return;
+            }
+
+            int n = this.botNews.searchNews(chatID, arr[1]);
+            if (n==0) {
+                this.botNews.updatePageTable(chatID, 0, false);
+                execute(new SendMessage(chatID, "Sorry, we don't find any information about your search"));
+            }
+            else {
+                SendPhoto replyMessage = this.botNews.displayNews(chatID, 0, false);
+                execute(replyMessage);
+            }
         }
-        else if (receiveMessage.contains("movieReview_forward_") || receiveMessage.contains("movieReview_backward_")) {
-            EditMessageText message;
-            String page = receiveMessage.split("_")[2];
-            if (receiveMessage.contains("movieReview_forward_"))
-                message = this.botMovie.displayReview(Integer.parseInt(page), chatId, Math.toIntExact(messageId), false);
-            else
-                message = this.botMovie.displayReview(Integer.parseInt(page), chatId, Math.toIntExact(messageId), true);
-            execute(message);
+        else if (receiveMessage.equals("/hot_news")) {
+            this.botNews.getHotNews();
+            SendPhoto replyMessage = this.botNews.displayNews(chatID, 0, true);
+            execute(replyMessage);
         }
-        else if (receiveMessage.equals("delete_movieReview")) {
-            DeleteMessage deleteMessage = new DeleteMessage(chatId, Math.toIntExact(messageId));
-            execute(deleteMessage);
+        else if (receiveMessage.equals("previous_hot_news")) {
+            int desPage = botNews.movePageHotNews(chatID, -1);
+            EditMessageMedia replyMessage = botNews.displayNews(chatID, messageID, desPage, true);
+            execute(replyMessage);
+        }
+        else if (receiveMessage.equals("next_hot_news")) {
+            int desPage = botNews.movePageHotNews(chatID, 1);
+            EditMessageMedia replyMessage = botNews.displayNews(chatID, messageID, desPage, true);
+            execute(replyMessage);
+        }
+        else if (receiveMessage.equals("previous_search_news")) {
+            int desPage = botNews.movePageSearchNews(chatID, -1);
+            EditMessageMedia replyMessage = botNews.displayNews(chatID, messageID, desPage, false);
+            execute(replyMessage);
+        }
+        else if (receiveMessage.equals("next_search_news")) {
+            int desPage = botNews.movePageSearchNews(chatID, 1);
+
+            EditMessageMedia replyMessage = botNews.displayNews(chatID, messageID, desPage, false);
+            execute(replyMessage);
         }
     }
 
-    public void callBotTV(String receiveMessage , String chatId , long messageId) throws Exception{
-        if (receiveMessage.equals("get_TVshow")) {
-            //send message when click button
-            SendMessage replyMessage = this.botTV.getStart(chatId, Math.toIntExact(messageId));
-            execute(replyMessage);
-        }
-        else if (receiveMessage.contains("/TVshowSeason")){
-            String TVShowSeason = receiveMessage.split(" " , 2)[1] ;
-            TVShowSeason = TVShowSeason.replace(" " , "%20") ;
-            this.botTV.searchSeason(TVShowSeason) ;
-            SendMessage replyMessage = this.botTV.displaySearchList(0, chatId);
-            execute(replyMessage);
-
-        }
-        else if (receiveMessage.contains("/TVshowName")){
-            String TVShowName = receiveMessage.split(" ", 2)[1] ;
-            TVShowName = TVShowName.replace(" " , "%20")  ;
-            this.botTV.seachByName(TVShowName) ;
-            SendMessage replyMessage = this.botTV.displaySearchList(0, chatId);
-            execute(replyMessage);
-        }
-        else if (receiveMessage.contains("/trending_TVshow")) {
-            this.botTV.SearchTrendingTVShows();
-            SendMessage replyMessage = this.botTV.displaySearchList(0, chatId);
-            execute(replyMessage);
-        }
-    }
-
-    public void callBotWaiting(String receiveMessage, String chatId, long messageId) throws TelegramApiException {
+    public void callBotWaiting(String receiveMessage, String chatID, long messageID) throws TelegramApiException {
         if (receiveMessage.equals("get_myList") || receiveMessage.equals("/mylist")) {
-            SendMessage message = this.botWaiting.displayMyList(chatId);
+            SendMessage message = this.botWaiting.displayMyList(chatID);
             execute(message);
         }
         else if (receiveMessage.contains("myListIndex_")) {
-            DeleteMessage deleteMessage = new DeleteMessage(chatId, Math.toIntExact(messageId));
+            DeleteMessage deleteMessage = new DeleteMessage(chatID, Math.toIntExact(messageID));
             execute(deleteMessage);
 
             int index = Integer.parseInt(receiveMessage.split("_")[1]);
             this.botWaiting.removeFromList(index);
-            SendMessage message = this.botWaiting.displayMyList(chatId);
+            SendMessage message = this.botWaiting.displayMyList(chatID);
             execute(message);
         }
-        else if (receiveMessage.contains("add_myList_")) {
-            int index = Integer.parseInt(receiveMessage.split("_")[2]);
-            JSONObject movie = this.botMovie.getMovie(index, chatId);
-            UpComingMovie upComingMovie = new UpComingMovie(movie.get("original_title").toString(),
+        else if (receiveMessage.contains("add_m_myList_")) {
+            int index = Integer.parseInt(receiveMessage.split("_")[3]);
+            JSONObject movie = this.movieController.getMovieView()
+                                                    .getMovie(chatID)
+                                                    .getJSONObject(index);
+            UpComing upComing = new UpComing(movie.get("original_title").toString(),
                     movie.get("release_date").toString() + " 00:00:00",
-                    chatId);
-            this.botWaiting.addToList(new UpComingMovie("hello", "2022-04-19 00:00:00", chatId));
-            this.botWaiting.addToList(new UpComingMovie("hello2", "2022-04-17 00:00:00", chatId));
-            if (!this.botWaiting.isExist(upComingMovie)) {
-                this.botWaiting.addToList(upComingMovie);
+                    chatID);
+            if (!this.botWaiting.isExist(upComing)) {
+                this.botWaiting.addToList(upComing);
                 SendMessage message = new SendMessage();
-                message.setChatId(chatId);
+                message.setChatId(chatID);
                 message.setText("add successful");
                 try {
                     execute(message);
@@ -282,8 +292,38 @@ public class Tkun910_bot extends TelegramLongPollingBot {
             }
             else {
                 SendMessage message = new SendMessage();
-                message.setChatId(chatId);
+                message.setChatId(chatID);
                 message.setText("Movie has already in list");
+                try {
+                    execute(message);
+                } catch (TelegramApiException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        else if (receiveMessage.contains("add_TV_myList_")) {
+            int index = Integer.parseInt(receiveMessage.split("_")[3]);
+            JSONObject show = this.showController.getShowView()
+                                                .getShow(chatID)
+                                                .getJSONObject(index);
+            UpComing upComing = new UpComing(show.get("original_name").toString(),
+                                                        show.get("first_air_date").toString() + " 00:00:00",
+                                                        chatID);
+            if (!this.botWaiting.isExist(upComing)) {
+                this.botWaiting.addToList(upComing);
+                SendMessage message = new SendMessage();
+                message.setChatId(chatID);
+                message.setText("add successful");
+                try {
+                    execute(message);
+                } catch (TelegramApiException e) {
+                    e.printStackTrace();
+                }
+            }
+            else {
+                SendMessage message = new SendMessage();
+                message.setChatId(chatID);
+                message.setText("TVShow has already in list");
                 try {
                     execute(message);
                 } catch (TelegramApiException e) {
@@ -293,72 +333,21 @@ public class Tkun910_bot extends TelegramLongPollingBot {
         }
     }
 
-    public void callBotNews(String receiveMessage, String chatId, int messageId) throws Exception {
-    	if (receiveMessage.equals("get_news") || receiveMessage.equals("/news")) {
-            SendMessage replyMessage = this.botNews.introMessage(chatId);
-            execute(replyMessage);
-        }
-        else if (receiveMessage.startsWith("/search_news")) {
-            // take movie name from user message
-            String[] arr = receiveMessage.split(" ", 2);
-            if (arr.length<2) {
-                execute(new SendMessage(chatId, "Please enter keywords for us to searching"));
-                return;
-            }
-
-            int n = this.botNews.searchNews(chatId, arr[1]);
-            if (n==0) {
-                this.botNews.updatePageTable(chatId, 0, false);
-                execute(new SendMessage(chatId, "Sorry, we don't find any information about your search"));
-            }
-            else {
-                SendPhoto replyMessage = this.botNews.displayNews(chatId, 0, false);
-                execute(replyMessage);
-            }
-        }
-        else if (receiveMessage.equals("/hot_news")) {
-            this.botNews.getHotNews();
-            SendPhoto replyMessage = this.botNews.displayNews(chatId, 0, true);
-            execute(replyMessage);
-        }
-        else if (receiveMessage.equals("previous_hot_news")) {
-            int desPage = botNews.movePageHotNews(chatId, -1);
-            EditMessageMedia replyMessage = botNews.displayNews(chatId, messageId, desPage, true);
-            execute(replyMessage);
-        }
-        else if (receiveMessage.equals("next_hot_news")) {
-            int desPage = botNews.movePageHotNews(chatId, 1);
-            EditMessageMedia replyMessage = botNews.displayNews(chatId, messageId, desPage, true);
-            execute(replyMessage);
-        }
-        else if (receiveMessage.equals("previous_search_news")) {
-            int desPage = botNews.movePageSearchNews(chatId, -1);
-            EditMessageMedia replyMessage = botNews.displayNews(chatId, messageId, desPage, false);
-            execute(replyMessage);
-        }
-        else if (receiveMessage.equals("next_search_news")) {
-            int desPage = botNews.movePageSearchNews(chatId, 1);
-
-            EditMessageMedia replyMessage = botNews.displayNews(chatId, messageId, desPage, false);
-            execute(replyMessage);
-        }
-    }
-    
     class Checker extends TimerTask {
         /*
             Class use to check whether a movie in BotWaiting is releases
          */
-        private Queue<UpComingMovie> list;
+        private Queue<UpComing> list;
 
-        public Checker(Queue<UpComingMovie> l) {
+        public Checker(Queue<UpComing> l) {
             this.list = l;
         }
 
         @Override
         public void run() {
-            List<UpComingMovie> temp = new ArrayList<>();
+            List<UpComing> temp = new ArrayList<>();
             while (!this.list.isEmpty()) {
-                UpComingMovie movie = this.list.poll();
+                UpComing movie = this.list.poll();
                 temp.add(movie);
                 SendMessage message = new SendMessage();
                 message.setChatId(movie.getChatId());

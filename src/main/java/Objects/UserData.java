@@ -8,19 +8,19 @@ import org.json.JSONArray;
  *  user when they search for a film or get trending/upcoming movie
  */
 public class UserData {
-    JSONArray movieObjs;
+    JSONArray objects;
     JSONArray reviewObjs;
 
     public UserData() {
-        this.movieObjs = new JSONArray();
+        this.objects = new JSONArray();
         this.reviewObjs = new JSONArray();
     }
-    public UserData(JSONArray movieObjs, JSONArray reviewObjs) {
-        this.movieObjs = movieObjs;
+    public UserData(JSONArray objects, JSONArray reviewObjs) {
+        this.objects = objects;
         this.reviewObjs = reviewObjs;
     }
-    public UserData(JSONArray movieObjs) {
-        this.movieObjs = movieObjs;
+    public UserData(JSONArray objects) {
+        this.objects = objects;
         this.reviewObjs = new JSONArray();
     }
 
@@ -28,12 +28,12 @@ public class UserData {
         this.reviewObjs = reviewObjs;
     }
 
-    public void setMovieObjs(JSONArray movieObjs) {
-        this.movieObjs = movieObjs;
+    public void setMovieObjs(JSONArray objects) {
+        this.objects = objects;
     }
 
     public JSONArray getMovieObjs() {
-        return movieObjs;
+        return objects;
     }
 
     public JSONArray getReviewObjs() {

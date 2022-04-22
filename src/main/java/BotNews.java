@@ -80,8 +80,6 @@ public class BotNews {
                 .header("X-RapidAPI-Host", "bing-news-search1.p.rapidapi.com")
                 .header("X-RapidAPI-Key", "8d4ad00739mshb31c1b6a520f47dp1b103cjsn2fa6a12fc8bd")
                 .asJson();
-        //System.out.println(response.getBody().getObject().toString());
-        //allNews = response.getBody().getObject().getJSONArray("value");
 
         if (this.searchNewsTable.containsKey(Long.parseLong(chatID)))
             this.searchNewsTable.replace(Long.parseLong(chatID), response.getBody().getObject().getJSONArray("value"));
@@ -89,9 +87,7 @@ public class BotNews {
             this.searchNewsTable.put(Long.parseLong(chatID), response.getBody().getObject().getJSONArray("value"));
 
         int n = this.searchNewsTable.get(Long.parseLong(chatID)).length();
-        //System.out.println(n);
         this.updateSearchResult(chatID, n);
-        //System.out.println(this.numSearchNewsTable.get(Long.parseLong(chatID)));
         return n;
     }
 

@@ -5,12 +5,12 @@ package Objects;
  * It contains chatId to identify which movie that each user is interested in,
  * Name for movie name and release date
  */
-public class UpComingMovie {
+public class UpComing {
     String name;
     String releaseDate;
     String chatId;
 
-    public UpComingMovie(String n, String r, String chatId) {
+    public UpComing(String n, String r, String chatId) {
         this.name = n;
         this.releaseDate = r;
         this.chatId = chatId;

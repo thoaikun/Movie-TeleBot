@@ -6,11 +6,11 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-import Objects.UpComingMovie;
+import Objects.UpComing;
 
-class MovieComparater implements Comparator<UpComingMovie> {
+class MovieComparater implements Comparator<UpComing> {
     @Override
-    public int compare(UpComingMovie o1, UpComingMovie o2) {
+    public int compare(UpComing o1, UpComing o2) {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date o1Date = null;
         Date o2Date = null;
@@ -30,35 +30,35 @@ class MovieComparater implements Comparator<UpComingMovie> {
 }
 
 public class BotWaiting extends TimerTask {
-    private PriorityQueue<UpComingMovie> myWaitingList;
-    private Queue<UpComingMovie> notifyList;
+    private PriorityQueue<UpComing> myWaitingList;
+    private Queue<UpComing> notifyList;
 
     public BotWaiting() {
-        this.myWaitingList = new PriorityQueue<UpComingMovie>(5, new MovieComparater());
+        this.myWaitingList = new PriorityQueue<UpComing>(5, new MovieComparater());
         this.notifyList = new ArrayDeque<>();
     }
 
     public boolean addToList(String name, String releaseDate, String chatId) {
-        if (this.myWaitingList.add(new UpComingMovie(name, releaseDate, chatId)))
+        if (this.myWaitingList.add(new UpComing(name, releaseDate, chatId)))
             return true;
         return false;
     }
 
-    public boolean addToList(UpComingMovie movie) {
+    public boolean addToList(UpComing movie) {
         if (this.myWaitingList.add(movie))
             return true;
         return false;
     }
 
-    public Queue<UpComingMovie> getNotifyList() {
+    public Queue<UpComing> getNotifyList() {
         return this.notifyList;
     }
 
-    public boolean isExist(UpComingMovie movie) {
+    public boolean isExist(UpComing movie) {
         Object[] arrays = this.myWaitingList.toArray();
         for (int i=0; i < arrays.length; i++) {
-            UpComingMovie UpComingMovie = (UpComingMovie) arrays[i];
-            if (UpComingMovie.getName().equals(movie.getName()))
+            UpComing UpComing = (UpComing) arrays[i];
+            if (UpComing.getName().equals(movie.getName()))
                 return true;
         }
         return false;
@@ -72,7 +72,7 @@ public class BotWaiting extends TimerTask {
         List<InlineKeyboardButton> row = new ArrayList<>();
         String text = "";
         for (int i=0; i < arrays.length; i++) {
-            UpComingMovie movie = (UpComingMovie) arrays[i];
+            UpComing movie = (UpComing) arrays[i];
             text += i + "/ " + movie.getName() + "\n";
             row.add(new InlineKeyboardButton(String.valueOf(i), null, "myListIndex_" + i,
                     null, null, null, null, null));
@@ -93,9 +93,9 @@ public class BotWaiting extends TimerTask {
             return false;
 
         int count = 0;
-        List<UpComingMovie> temp = new ArrayList<>();
+        List<UpComing> temp = new ArrayList<>();
         while (!this.myWaitingList.isEmpty()) {
-            UpComingMovie movie = this.myWaitingList.poll();
+            UpComing movie = this.myWaitingList.poll();
             if (count != index) {
                 temp.add(movie);
             }
@@ -111,7 +111,7 @@ public class BotWaiting extends TimerTask {
     public void run() {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         while (!this.notifyList.isEmpty()) {
-            UpComingMovie movie = this.notifyList.peek();
+            UpComing movie = this.notifyList.peek();
             Date date = null;
             try {
                 date = format.parse(movie.getReleaseDate());
@@ -124,7 +124,7 @@ public class BotWaiting extends TimerTask {
                 break;
         }
         while (!this.myWaitingList.isEmpty()) {
-            UpComingMovie movie = this.myWaitingList.peek();
+            UpComing movie = this.myWaitingList.peek();
             Date date = null;
             try {
                 date = format.parse(movie.getReleaseDate());
