@@ -30,14 +30,12 @@ public class Tkun910_bot extends TelegramLongPollingBot {
 
     @Override
     public String getBotUsername() {
-        //return "MovieBot";
-        return "TA1810_bot";
+        return "MovieBot";
     }
 
     @Override
     public String getBotToken() {
-        //return "5065559354:AAH1_fHycshH3GmcGI8ndzhgJ2BHS26x9gQ";
-        return "5207828487:AAGB1XTaulRGYMBzAY4Hx7NCSt9Nb9Ap2mU";
+        return "5065559354:AAH1_fHycshH3GmcGI8ndzhgJ2BHS26x9gQ";
     }
 
     @Override

@@ -5,11 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="93ba17d2-e9f4-48d5-b26f-6c3e49e2b01c" name="Changes" comment="add BotNews">
-      <change beforePath="$PROJECT_DIR$/src/main/java/BotNews.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/BotNews.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/Tkun910_bot.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Tkun910_bot.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/BotNews.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/BotNews.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/Tkun910_bot$Checker.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Tkun910_bot$Checker.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/Tkun910_bot.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Tkun910_bot.class" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -126,7 +122,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/Tkun910_bot.java</url>
-          <line>215</line>
+          <line>213</line>
           <option name="timeStamp" value="3" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-method">
