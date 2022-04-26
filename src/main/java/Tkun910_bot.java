@@ -30,12 +30,14 @@ public class Tkun910_bot extends TelegramLongPollingBot {
 
     @Override
     public String getBotUsername() {
-        return "MovieBot";
+        //return "MovieBot";
+        return "TA1810_bot";
     }
 
     @Override
     public String getBotToken() {
-        return "5065559354:AAH1_fHycshH3GmcGI8ndzhgJ2BHS26x9gQ";
+        //return "5065559354:AAH1_fHycshH3GmcGI8ndzhgJ2BHS26x9gQ";
+        return "5207828487:AAGB1XTaulRGYMBzAY4Hx7NCSt9Nb9Ap2mU";
     }
 
     @Override
@@ -225,34 +227,34 @@ public class Tkun910_bot extends TelegramLongPollingBot {
                 execute(new SendMessage(chatID, "Sorry, we don't find any information about your search"));
             }
             else {
-                SendPhoto replyMessage = this.botNews.displayNews(chatID, 0, false);
+                SendPhoto replyMessage = this.botNews.displaySearchNews(chatID, 0);
                 execute(replyMessage);
             }
         }
         else if (receiveMessage.equals("/hot_news")) {
             this.botNews.getHotNews();
-            SendPhoto replyMessage = this.botNews.displayNews(chatID, 0, true);
+            SendPhoto replyMessage = this.botNews.displayHotNews(chatID, 0);
             execute(replyMessage);
         }
         else if (receiveMessage.equals("previous_hot_news")) {
-            int desPage = botNews.movePageHotNews(chatID, -1);
-            EditMessageMedia replyMessage = botNews.displayNews(chatID, messageID, desPage, true);
+            int desPage = botNews.movePage(chatID, -1, true);
+            EditMessageMedia replyMessage = botNews.displayHotNews(chatID, messageID, desPage);
             execute(replyMessage);
         }
         else if (receiveMessage.equals("next_hot_news")) {
-            int desPage = botNews.movePageHotNews(chatID, 1);
-            EditMessageMedia replyMessage = botNews.displayNews(chatID, messageID, desPage, true);
+            int desPage = botNews.movePage(chatID, 1, true);
+            EditMessageMedia replyMessage = botNews.displayHotNews(chatID, messageID, desPage);
             execute(replyMessage);
         }
         else if (receiveMessage.equals("previous_search_news")) {
-            int desPage = botNews.movePageSearchNews(chatID, -1);
-            EditMessageMedia replyMessage = botNews.displayNews(chatID, messageID, desPage, false);
+            int desPage = botNews.movePage(chatID, -1, false);
+            EditMessageMedia replyMessage = botNews.displaySearchNews(chatID, messageID, desPage);
             execute(replyMessage);
         }
         else if (receiveMessage.equals("next_search_news")) {
-            int desPage = botNews.movePageSearchNews(chatID, 1);
+            int desPage = botNews.movePage(chatID, 1, false);
 
-            EditMessageMedia replyMessage = botNews.displayNews(chatID, messageID, desPage, false);
+            EditMessageMedia replyMessage = botNews.displaySearchNews(chatID, messageID, desPage);
             execute(replyMessage);
         }
     }

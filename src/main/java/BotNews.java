@@ -36,10 +36,11 @@ public class BotNews {
     private Map<Long, JSONArray> searchNewsTable = new HashMap<Long, JSONArray>();
     private Map<Long, Integer> hotNewsPageTable = new HashMap<Long, Integer>();
     private Map<Long, Integer> searchNewsPageTable = new HashMap<Long, Integer>();
-    private Map<Long, Integer> numSearchNewsTable = new HashMap<Long, Integer>();
-    private int numHotNews = 0;
     public static final int maxNumHotNews = 40;
     public static final int maxNumSearchNews = 20;
+    private int numHotNews = 0;
+    private Map<Long, Integer> numSearchNewsTable = new HashMap<Long, Integer>();
+
 
     public SendMessage introMessage(String chatID) {
         // setting up for message
@@ -67,27 +68,46 @@ public class BotNews {
         this.numHotNews = this.hotNews.length();
 
         for (Long x : hotNewsPageTable.keySet()) {
-            this.updatePageTable(x.toString(), this.movePageHotNews(x.toString(), 0), true);
+            this.updatePageTable(x.toString(), this.movePage(x.toString(), 0, true), true);
         }
     }
 
     public int searchNews(String chatID, String key) throws UnirestException, UnsupportedEncodingException {
-        HttpResponse<JsonNode> response = Unirest.get("https://bing-news-search1.p.rapidapi.com/news/search?q="
-                        + URLEncoder.encode(key, StandardCharsets.UTF_8)
-                        + "&count=" + BotNews.maxNumSearchNews
-                        + "&mkt=en-US&freshness=Day&textFormat=Raw&safeSearch=Off")
-                .header("X-BingApis-SDK", "true")
-                .header("X-RapidAPI-Host", "bing-news-search1.p.rapidapi.com")
+        HttpResponse<JsonNode> response0 = Unirest.get("https://online-movie-database.p.rapidapi.com/auto-complete?q=" + URLEncoder.encode(key, StandardCharsets.UTF_8))
+                .header("X-RapidAPI-Host", "online-movie-database.p.rapidapi.com")
                 .header("X-RapidAPI-Key", "8d4ad00739mshb31c1b6a520f47dp1b103cjsn2fa6a12fc8bd")
                 .asJson();
 
-        if (this.searchNewsTable.containsKey(Long.parseLong(chatID)))
-            this.searchNewsTable.replace(Long.parseLong(chatID), response.getBody().getObject().getJSONArray("value"));
-        else
-            this.searchNewsTable.put(Long.parseLong(chatID), response.getBody().getObject().getJSONArray("value"));
+        String typeID = response0.getBody().getObject().getJSONArray("d").getJSONObject(0).getString("id");
+
+        HttpResponse<JsonNode> response1;
+        if (typeID.startsWith("nm")) {
+            response1 = Unirest.get("https://online-movie-database.p.rapidapi.com/actors/get-all-news?nconst=" + typeID)
+                    .header("X-RapidAPI-Host", "online-movie-database.p.rapidapi.com")
+                    .header("X-RapidAPI-Key", "8d4ad00739mshb31c1b6a520f47dp1b103cjsn2fa6a12fc8bd")
+                    .asJson();
+
+            this.searchNewsTable.replace(Long.parseLong(chatID), response1.getBody().getObject().getJSONArray("items"));
+            int length = this.searchNewsTable.get(Long.parseLong(chatID)).length();
+            if (length > maxNumSearchNews) {
+                for (int i=length - 1; i >= maxNumSearchNews; i++) {
+                    this.searchNewsTable.get(Long.parseLong(chatID)).remove(i);
+                }
+            }
+        }
+        else {
+            response1 = Unirest.get("https://online-movie-database.p.rapidapi.com/title/get-news?tconst=" + typeID + "&limit=" + maxNumSearchNews)
+                    .header("X-RapidAPI-Host", "online-movie-database.p.rapidapi.com")
+                    .header("X-RapidAPI-Key", "8d4ad00739mshb31c1b6a520f47dp1b103cjsn2fa6a12fc8bd")
+                    .asJson();
+            this.searchNewsTable.put(Long.parseLong(chatID), response1.getBody().getObject().getJSONArray("items"));
+        }
 
         int n = this.searchNewsTable.get(Long.parseLong(chatID)).length();
-        this.updateSearchResult(chatID, n);
+        if (this.numSearchNewsTable.containsKey(Long.parseLong(chatID)))
+            this.numSearchNewsTable.replace(Long.parseLong(chatID), n);
+        else
+            this.numSearchNewsTable.put(Long.parseLong(chatID), n);
         return n;
     }
 
@@ -109,24 +129,26 @@ public class BotNews {
         return new InlineKeyboardMarkup(btnList);
     }
 
-    public SendPhoto displayNews(String chatID, int page, boolean isHotNews) {
-        this.updatePageTable(chatID, page, isHotNews);
+    public SendPhoto displayHotNews(String chatID, int page) {
+        this.updatePageTable(chatID, page, true);
 
-        JSONObject news = isHotNews
-                ?this.hotNews.getJSONObject(page)
-                :this.searchNewsTable.get(Long.parseLong(chatID)).getJSONObject(page);
+        JSONObject news = this.hotNews.getJSONObject(page);
 
-        InputFile img = new InputFile("https://img.freepik.com/free-vector/lightbulb-with-liquid-inside-steps-creativity-concept-get-ideas_180264-11.jpg?w=2000");
+        InputFile img = new InputFile(
+                "https://img.freepik.com/free-vector/lightbulb-with-liquid-inside-steps-creativity-concept-get-ideas_180264-11.jpg?w=2000");
         if (news.toMap().containsKey("image")) {
             img.setMedia(news.getJSONObject("image").getJSONObject("thumbnail").getString("contentUrl"));
         }
 
+        String body = news.getString("description").length() < 500
+                ?news.getString("description")
+                : (news.getString("description").substring(0, 500) + " ...");
         String textMessage = news.getString("name").toUpperCase(Locale.ROOT)
-                + "\n\n" + news.getString("description")
+                + "\n\n" + body
                 + "\n\n" + news.getString("datePublished").substring(0, 10)
                 + "\nBy: " + news.getJSONArray("provider").getJSONObject(0).getString("name");
 
-        InlineKeyboardMarkup btn = BotNews.displayBtn(news.getString("url"), isHotNews);
+        InlineKeyboardMarkup btn = BotNews.displayBtn(news.getString("url"), true);
 
         SendPhoto photo = new SendPhoto();
         photo.setChatId(chatID);
@@ -136,26 +158,57 @@ public class BotNews {
         return photo;
     }
 
-    public EditMessageMedia displayNews(String chatID, int messageID, int page, boolean isHotNews) {
-        this.updatePageTable(chatID, page, isHotNews);
+    public SendPhoto displaySearchNews(String chatID, int page) {
+        this.updatePageTable(chatID, page, false);
 
-        JSONObject news = isHotNews
-                ?this.hotNews.getJSONObject(page)
-                :this.searchNewsTable.get(Long.parseLong(chatID)).getJSONObject(page);
+        JSONObject news = this.searchNewsTable.get(Long.parseLong(chatID)).getJSONObject(page);
 
-        InputMediaPhoto img = new InputMediaPhoto("https://img.freepik.com/free-vector/lightbulb-with-liquid-inside-steps-creativity-concept-get-ideas_180264-11.jpg?w=2000");
+        InputFile img = new InputFile(
+                "https://img.freepik.com/free-vector/lightbulb-with-liquid-inside-steps-creativity-concept-get-ideas_180264-11.jpg?w=2000");
+        if (news.toMap().containsKey("image")) {
+            img.setMedia(news.getJSONObject("image").getString("url"));
+        }
+
+        String body = news.getString("body").length() < 500
+                ?news.getString("body")
+                : (news.getString("body").substring(0, 500) + " ...");
+        String textMessage = news.getString("head").toUpperCase(Locale.ROOT)
+                + "\n\n" + body
+                + "\n\n" + news.getString("publishDateTime").substring(0, 10)
+                + "\nBy: " + news.getJSONObject("source").getString("label");
+
+        InlineKeyboardMarkup btn = BotNews.displayBtn(news.getString("link"), false);
+
+        SendPhoto photo = new SendPhoto();
+        photo.setChatId(chatID);
+        photo.setPhoto(img);
+        photo.setCaption(textMessage);
+        photo.setReplyMarkup(btn);
+        return photo;
+    }
+
+    public EditMessageMedia displayHotNews(String chatID, int messageID, int page) {
+        this.updatePageTable(chatID, page, true);
+
+        JSONObject news = this.hotNews.getJSONObject(page);
+
+        InputMediaPhoto img = new InputMediaPhoto(
+                "https://img.freepik.com/free-vector/lightbulb-with-liquid-inside-steps-creativity-concept-get-ideas_180264-11.jpg?w=2000");
         if (news.toMap().containsKey("image")) {
             img.setMedia(news.getJSONObject("image").getJSONObject("thumbnail").getString("contentUrl"));
         }
 
+        String body = news.getString("description").length() < 500
+                ?news.getString("description")
+                : (news.getString("description").substring(0, 500) + " ...");
         String textMessage = news.getString("name").toUpperCase(Locale.ROOT)
-                + "\n\n" + news.getString("description")
+                + "\n\n" + body
                 + "\n\n" + news.getString("datePublished").substring(0, 10)
                 + "\nBy: " + news.getJSONArray("provider").getJSONObject(0).getString("name");
 
         img.setCaption(textMessage);
 
-        InlineKeyboardMarkup btn = BotNews.displayBtn(news.getString("url"), isHotNews);
+        InlineKeyboardMarkup btn = BotNews.displayBtn(news.getString("url"), true);
 
         EditMessageMedia updateMessage = new EditMessageMedia();
         updateMessage.setChatId(chatID);
@@ -165,21 +218,47 @@ public class BotNews {
         return updateMessage;
     }
 
-    public int movePageHotNews(String chatID, int step) {
-        int desPage = this.hotNewsPageTable.get(Long.parseLong(chatID)) + step;
-        if (desPage >= this.numHotNews)
-            return desPage%this.numHotNews;
-        else if (desPage < 0)
-            return this.numHotNews - (-desPage)%this.numHotNews;
-        else return desPage;
+    public EditMessageMedia displaySearchNews(String chatID, int messageID, int page) {
+        this.updatePageTable(chatID, page, false);
+
+        JSONObject news = this.searchNewsTable.get(Long.parseLong(chatID)).getJSONObject(page);
+
+        InputMediaPhoto img = new InputMediaPhoto(
+                "https://img.freepik.com/free-vector/lightbulb-with-liquid-inside-steps-creativity-concept-get-ideas_180264-11.jpg?w=2000");
+        if (news.toMap().containsKey("image")) {
+            img.setMedia(news.getJSONObject("image").getString("url"));
+        }
+
+        String body = news.getString("body").length() < 500
+                ?news.getString("body")
+                : (news.getString("body").substring(0, 500) + " ...");
+        String textMessage = news.getString("head").toUpperCase(Locale.ROOT)
+                + "\n\n" + body
+                + "\n\n" + news.getString("publishDateTime").substring(0, 10)
+                + "\nBy: " + news.getJSONObject("source").getString("label");
+
+        img.setCaption(textMessage);
+
+        InlineKeyboardMarkup btn = BotNews.displayBtn(news.getString("link"), false);
+
+        EditMessageMedia updateMessage = new EditMessageMedia();
+        updateMessage.setChatId(chatID);
+        updateMessage.setMessageId(messageID);
+        updateMessage.setMedia(img);
+        updateMessage.setReplyMarkup(btn);
+        return updateMessage;
     }
 
-    public int movePageSearchNews(String chatID, int step) {
-        int desPage = this.searchNewsPageTable.get(Long.parseLong(chatID)) + step;
-        if (desPage >= this.numSearchNewsTable.get(Long.parseLong(chatID)))
-            return desPage%this.numSearchNewsTable.get(Long.parseLong(chatID));
+    public int movePage(String chatID, int step, boolean isHotNews) {
+        int desPage = (isHotNews
+                ?this.hotNewsPageTable.get(Long.parseLong(chatID))
+                :this.searchNewsPageTable.get(Long.parseLong(chatID)))
+                + step;
+        int n = isHotNews?this.numHotNews:this.numSearchNewsTable.get(Long.parseLong(chatID));
+        if (desPage >= n)
+            return desPage%n;
         else if (desPage < 0)
-            return this.numSearchNewsTable.get(Long.parseLong(chatID)) - (-desPage)%BotNews.this.numSearchNewsTable.get(Long.parseLong(chatID));
+            return n - (-desPage)%n;
         else return desPage;
     }
 
@@ -196,12 +275,5 @@ public class BotNews {
             else
                 this.searchNewsPageTable.put(Long.parseLong(chatID), page);
         }
-    }
-
-    public void updateSearchResult(String chatID, int n) {
-        if (this.numSearchNewsTable.containsKey(Long.parseLong(chatID)))
-            this.numSearchNewsTable.replace(Long.parseLong(chatID), n);
-        else
-            this.numSearchNewsTable.put(Long.parseLong(chatID), n);
     }
 }
