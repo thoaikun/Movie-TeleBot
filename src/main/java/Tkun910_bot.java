@@ -42,7 +42,7 @@ public class Tkun910_bot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
             String receiveMessage = update.getMessage().getText();
-            String chatId = update.getMessage().getChatId().toString();
+            String chatID = update.getMessage().getChatId().toString();
 
             // check receive message
             if (receiveMessage.equals("/start")) {
@@ -55,24 +55,34 @@ public class Tkun910_bot extends TelegramLongPollingBot {
             }
             else if (receiveMessage.contains("movie")) {
                 try {
-                    callBotMovie(receiveMessage, chatId, 0);
+                    callBotMovie(receiveMessage, chatID, 0);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    try {
+                        execute(new SendMessage(chatID, "Something wrong happened, please try again"));
+                        execute(this.movieController.returnToList(chatID));
+                    } catch (TelegramApiException ex) {
+                        ex.printStackTrace();
+                    }
                 }
             }
             else if (receiveMessage.contains("TVshow")){
                 try {
-                    callBotTV(receiveMessage , chatId , 0) ;
+                    callBotTV(receiveMessage , chatID , 0) ;
                 }
                 catch (Exception e){
-                    e.printStackTrace();
+                    try {
+                        execute(new SendMessage(chatID, "Something wrong happened, please try again"));
+                        execute(this.showController.returnToList(chatID));
+                    } catch (TelegramApiException ex) {
+                        ex.printStackTrace();
+                    }
                 }
             }
             else if (receiveMessage.equals("/news")
                     || receiveMessage.equals("/hot_news")
                     || receiveMessage.startsWith("/search_news")){
                 try {
-                    callBotNews(receiveMessage , chatId , 0);
+                    callBotNews(receiveMessage , chatID , 0);
                 }
                 catch (Exception e){
                     e.printStackTrace();
@@ -80,9 +90,16 @@ public class Tkun910_bot extends TelegramLongPollingBot {
             }
             else if (receiveMessage.equals("/mylist")) {
                 try {
-                    callBotWaiting(receiveMessage, chatId, 0);
+                    callBotWaiting(receiveMessage, chatID, 0);
                 }
                 catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            else {
+                try {
+                    execute(new SendMessage(chatID, "OPP! Wrong comment, please check again !!"));
+                } catch (TelegramApiException e) {
                     e.printStackTrace();
                 }
             }
@@ -96,28 +113,46 @@ public class Tkun910_bot extends TelegramLongPollingBot {
                 try {
                     callBotMovie(receiveMessage, chatID, messageID);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    try {
+                        execute(new SendMessage(chatID, "Something wrong happened, please try again"));
+                        execute(this.movieController.returnToList(chatID));
+                    } catch (TelegramApiException ex) {
+                        ex.printStackTrace();
+                    }
                 }
             }
             else if (receiveMessage.contains("TVshow")) {
                 try {
                     callBotTV(receiveMessage, chatID, messageID);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    try {
+                        execute(new SendMessage(chatID, "Something wrong happened, please try again"));
+                        execute(this.showController.returnToList(chatID));
+                    } catch (TelegramApiException ex) {
+                        ex.printStackTrace();
+                    }
                 }
             }
             else if (receiveMessage.contains("news")) {
                 try {
                     callBotNews(receiveMessage, chatID, (int)messageID);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    try {
+                        execute(new SendMessage(chatID, "Something wrong happened, please try again"));
+                    } catch (TelegramApiException ex) {
+                        ex.printStackTrace();
+                    }
                 }
             }
             else if (receiveMessage.contains("myList")) {
                 try {
                     callBotWaiting(receiveMessage, chatID, messageID);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    try {
+                        execute(new SendMessage(chatID, "Something wrong happened, please try again"));
+                    } catch (TelegramApiException ex) {
+                        ex.printStackTrace();
+                    }
                 }
             }
         }

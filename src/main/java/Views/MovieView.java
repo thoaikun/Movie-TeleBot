@@ -187,7 +187,7 @@ public class MovieView implements View {
         SimpleDateFormat output = new SimpleDateFormat("dd/MM/yyyy");
         movieReleaseDate = output.format(valueDate);
 
-        InputFile image = new InputFile("https://image.tmdb.org/t/p/original/" + movieImg);
+        InputFile image = new InputFile("https://image.tmdb.org/t/p/original" + movieImg);
         SendPhoto reply = new SendPhoto(chatID, image);
         reply.setCaption(movieName.toUpperCase() + "\n\n" +
                 "Release date: " + movieReleaseDate + "\n\n" +

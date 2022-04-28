@@ -111,18 +111,18 @@ public class ShowView implements View {
 
         for (int i=5*index; i < Math.min(5*index + 5, searchedList.length()); i++) {
             JSONObject movie = searchedList.getJSONObject(i);
-            String movieName = movie.get("original_title").toString();
+            String movieName = movie.get("original_name").toString();
 
             text += i + "/ " + movieName + "\n";
-            row1.add(new InlineKeyboardButton(String.valueOf(i), null, "movieIndex_" + i,
+            row1.add(new InlineKeyboardButton(String.valueOf(i), null, "TVshowIndex_" + i,
                     null, null, null, null, null));
         }
 
         if ((index-1)*5 >= 0)
-            row2.add(new InlineKeyboardButton("<<", null, "movieList_backward_" + (index - 1),
+            row2.add(new InlineKeyboardButton("<<", null, "TVshow_backward_" + (index - 1),
                     null, null, null, null, null));
         if ((index+1)*5 < searchedList.length() - 1)
-            row2.add(new InlineKeyboardButton(">>", null, "movieList_forward_" + (index + 1),
+            row2.add(new InlineKeyboardButton(">>", null, "TVshow_forward_" + (index + 1),
                     null, null, null, null, null));
 
         List<List<InlineKeyboardButton>> btnList = new ArrayList<>();
