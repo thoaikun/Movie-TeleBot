@@ -145,6 +145,8 @@ public class MovieView implements View {
         String movieName = detailMovie.get("original_title").toString();
         String movieReleaseDate = detailMovie.get("release_date").toString();
         String movieOverview = detailMovie.get("overview").toString();
+        if (movieOverview.length() > 700)
+            movieOverview = movieOverview.substring(0, 700) + "...";
         String movieRating = detailMovie.get("vote_average").toString();
         String movieImg = detailMovie.get("poster_path").toString();
 

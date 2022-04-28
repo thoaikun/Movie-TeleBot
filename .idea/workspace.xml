@@ -4,7 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="93ba17d2-e9f4-48d5-b26f-6c3e49e2b01c" name="Changes" comment="add BotNews" />
+    <list default="true" id="93ba17d2-e9f4-48d5-b26f-6c3e49e2b01c" name="Changes" comment="add BotNews">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Tkun910_bot.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Tkun910_bot.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Views/ShowView.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Views/ShowView.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -80,7 +84,8 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1649938865194</updated>
-      <workItem from="1651109799252" duration="1741000" />
+      <workItem from="1651109799252" duration="2587000" />
+      <workItem from="1651156886153" duration="1342000" />
     </task>
     <task id="LOCAL-00001" summary="add BotNews">
       <created>1650593060937</created>
@@ -137,6 +142,16 @@
           <line>178</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/Tkun910_bot.java</url>
+          <line>67</line>
+          <option name="timeStamp" value="10" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/Tkun910_bot.java</url>
+          <line>123</line>
+          <option name="timeStamp" value="11" />
+        </line-breakpoint>
         <line-breakpoint enabled="true" type="java-method">
           <url>file://$PROJECT_DIR$/src/main/java/BotNews.java</url>
           <line>131</line>
@@ -145,15 +160,6 @@
             <option name="WATCH_EXIT" value="false" />
           </properties>
           <option name="timeStamp" value="2" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-method">
-          <url>file://$PROJECT_DIR$/src/main/java/Views/ShowView.java</url>
-          <line>105</line>
-          <properties class="Views.ShowView" method="displaySearchList">
-            <option name="EMULATED" value="true" />
-            <option name="WATCH_EXIT" value="false" />
-          </properties>
-          <option name="timeStamp" value="8" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

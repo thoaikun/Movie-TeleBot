@@ -51,7 +51,8 @@ public class ShowView implements View {
     public SendMessage getStart(String chatID) {
         String message = EmojiParser.parseToUnicode(
                 "You want to search some thing about TV Shows? Please enter :\n" +
-                        "Type /TVshow + 'your season TV Show you want to find'\n"+
+                        "Type /TVshow + your season TV Show you want to find'\n"+
+                        "Type /TVshowOnTheAir to get a list of shows that are currently on the air\n" +
                         "Type /trending_TVshow to see which TV Show is hot in this weekend\n"
         );
         SendMessage messageStart = new SendMessage(chatID, message);
@@ -74,7 +75,14 @@ public class ShowView implements View {
 
         for (int i=5*index; i < Math.min(5*index + 5, searchedList.length()); i++) {
             JSONObject Show = searchedList.getJSONObject(i);
-            String nameShow = Show.get("original_name").toString();
+            String checkLanguage = Show.get("name").toString() ;
+            String nameShow = "" ;
+            if (checkLanguage.contains("en")) {
+                nameShow = Show.get("original_name").toString();
+            }
+            else {
+                nameShow = Show.get("name").toString() ;
+            }
 
             text += i + "/ "+ nameShow + "\n";
             row1.add(new InlineKeyboardButton(String.valueOf(i), null, "TVshowIndex_" + i,
@@ -110,10 +118,17 @@ public class ShowView implements View {
         List<InlineKeyboardButton> row2 = new ArrayList<>();
 
         for (int i=5*index; i < Math.min(5*index + 5, searchedList.length()); i++) {
-            JSONObject movie = searchedList.getJSONObject(i);
-            String movieName = movie.get("original_name").toString();
+            JSONObject Show = searchedList.getJSONObject(i);
+            String checkLanguage = Show.get("name").toString() ;
+            String nameShow = "" ;
+            if (checkLanguage.contains("en")) {
+                nameShow = Show.get("original_name").toString();
+            }
+            else {
+                nameShow = Show.get("name").toString() ;
+            }
 
-            text += i + "/ " + movieName + "\n";
+            text += i + "/ " + nameShow + "\n";
             row1.add(new InlineKeyboardButton(String.valueOf(i), null, "TVshowIndex_" + i,
                     null, null, null, null, null));
         }
@@ -145,6 +160,8 @@ public class ShowView implements View {
     public SendPhoto displayMovieDetail(JSONObject detailShow, int index, String chatID, String showTrailerKey, boolean hasReview) throws ParseException {
         String showName =  detailShow.get("original_name").toString();
         String showOverView = detailShow.get("overview").toString();
+        if (showOverView.length() > 700)
+            showOverView = showOverView.substring(0, 700) + "...";
         String showVote = detailShow.get("vote_average").toString();
         String showFirstAirDate = detailShow.get("first_air_date").toString();
         String showImg = detailShow.get("poster_path").toString();

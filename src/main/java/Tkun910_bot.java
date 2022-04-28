@@ -190,8 +190,6 @@ public class Tkun910_bot extends TelegramLongPollingBot {
     private void callBotMovie(String receiveMessage, String chatID, long messageID) throws Exception {
         if (receiveMessage.equals("get_movie"))
             execute(this.movieController.sendWelcome(chatID));
-        else if (receiveMessage.contains("/movie"))
-            execute(this.movieController.sendSearchList(receiveMessage, chatID));
         else if (receiveMessage.equals("/trending_movie"))
             execute(this.movieController.sendTrendingList(chatID));
         else if (receiveMessage.equals("/upcoming_movie"))
@@ -212,13 +210,13 @@ public class Tkun910_bot extends TelegramLongPollingBot {
             execute(this.movieController.sendReviews(receiveMessage, chatID, messageID));
         else if (receiveMessage.equals("delete_movieReview"))
             execute(this.movieController.deleteMessage(chatID, messageID));
+        else if (receiveMessage.contains("/movie"))
+            execute(this.movieController.sendSearchList(receiveMessage, chatID));
     }
 
     private void callBotTV(String receiveMessage , String chatID , long messageID) throws Exception{
         if (receiveMessage.equals("get_TVshow"))
             execute(this.showController.sendWelcome(chatID));
-        else if (receiveMessage.contains("/TVshow"))
-            execute(this.showController.sendSearchList(receiveMessage, chatID));
         if (receiveMessage.contains("/TVshowOnTheAir"))
             execute(this.showController.sendOnAirList(chatID));
         else if (receiveMessage.contains("/trending_TVshow"))
@@ -239,6 +237,8 @@ public class Tkun910_bot extends TelegramLongPollingBot {
             execute(this.showController.sendReviews(receiveMessage, chatID, messageID));
         else if (receiveMessage.equals("delete_TVshowReview"))
             execute(this.showController.deleteMessage(chatID, messageID));
+        else if (receiveMessage.contains("/TVshow"))
+            execute(this.showController.sendSearchList(receiveMessage, chatID));
     }
 
     public void callBotNews(String receiveMessage, String chatID, int messageID) throws Exception {
