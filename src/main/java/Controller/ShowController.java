@@ -30,7 +30,7 @@ public class ShowController {
     public SendMessage sendSearchList(String receiveMessage, String chatID) throws UnirestException {
         String showName = receiveMessage.split(" ", 2)[1];
         showName = showName.replace(" ", "%20");
-        if (showName == "")
+        if (showName.isEmpty())
             return new SendMessage(chatID, "Please enter TVshow name");
 
         JSONArray results = this.showModal.searchMovie(showName);
