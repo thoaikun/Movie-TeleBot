@@ -314,8 +314,8 @@ public class Tkun910_bot extends TelegramLongPollingBot {
             UpComing upComing = new UpComing(movie.get("original_title").toString(),
                     movie.get("release_date").toString() + " 00:00:00",
                     chatID);
-            this.botWaiting.addToList(new UpComing("testing day 1", "2022-04-30 00:00:00", chatID));
-            this.botWaiting.addToList(new UpComing("testing day 2", "2022-05-2 00:00:00", chatID));
+            this.botWaiting.addToList(new UpComing("testing day 1", "2022-05-03 00:00:00", chatID));
+            this.botWaiting.addToList(new UpComing("testing day 2", "2022-05-04 00:00:00", chatID));
             if (!this.botWaiting.isExist(upComing)) {
                 this.botWaiting.addToList(upComing);
                 SendMessage message = new SendMessage();
@@ -396,14 +396,13 @@ public class Tkun910_bot extends TelegramLongPollingBot {
                 }
             }
 
-            for (int i=0; i < temp.size(); i++)
-                this.list.add(temp.get(i));
+
         }
     }
 
     public void runningCheck() {
         long delay = 1000L;
-        long period = 1000L * 60L * 60L * 12L;
+        long period = 1000L * 60L * 12L;
         new Timer().scheduleAtFixedRate(this.botWaiting, 0 ,period);
         new Timer().scheduleAtFixedRate(new Checker(this.botWaiting.getNotifyList()), delay, period);
     }
