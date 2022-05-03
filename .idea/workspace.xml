@@ -6,7 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="93ba17d2-e9f4-48d5-b26f-6c3e49e2b01c" name="Changes" comment="add BotNews">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Tkun910_bot.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Tkun910_bot.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/BotWaiting.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/BotWaiting.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -86,7 +86,8 @@
       <workItem from="1651109799252" duration="2587000" />
       <workItem from="1651156886153" duration="2186000" />
       <workItem from="1651227859969" duration="11000" />
-      <workItem from="1651480624430" duration="4580000" />
+      <workItem from="1651480624430" duration="5012000" />
+      <workItem from="1651542570212" duration="1470000" />
     </task>
     <task id="LOCAL-00001" summary="add BotNews">
       <created>1650593060937</created>
@@ -145,23 +146,8 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/Tkun910_bot.java</url>
-          <line>123</line>
-          <option name="timeStamp" value="11" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/Tkun910_bot.java</url>
-          <line>55</line>
-          <option name="timeStamp" value="18" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/Tkun910_bot.java</url>
-          <line>111</line>
-          <option name="timeStamp" value="20" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/Tkun910_bot.java</url>
-          <line>384</line>
-          <option name="timeStamp" value="22" />
+          <line>299</line>
+          <option name="timeStamp" value="25" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-method">
           <url>file://$PROJECT_DIR$/src/main/java/BotNews.java</url>
@@ -171,6 +157,15 @@
             <option name="WATCH_EXIT" value="false" />
           </properties>
           <option name="timeStamp" value="2" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-method">
+          <url>file://$PROJECT_DIR$/src/main/java/BotWaiting.java</url>
+          <line>66</line>
+          <properties class="BotWaiting" method="displayMyList">
+            <option name="EMULATED" value="true" />
+            <option name="WATCH_EXIT" value="false" />
+          </properties>
+          <option name="timeStamp" value="24" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

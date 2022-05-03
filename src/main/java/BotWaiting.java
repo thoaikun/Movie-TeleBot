@@ -66,17 +66,22 @@ public class BotWaiting extends TimerTask {
 
     public SendMessage displayMyList(String chatID) {
         Object[] arrays = this.myWaitingList.toArray();
-        if (arrays.length == 0)
-            return new SendMessage(chatID, "List empty");
 
         List<InlineKeyboardButton> row = new ArrayList<>();
         String text = "";
+        int count = 0;
         for (int i=0; i < arrays.length; i++) {
             UpComing movie = (UpComing) arrays[i];
-            text += i + "/ " + movie.getName() + "\n";
-            row.add(new InlineKeyboardButton(String.valueOf(i), null, "myListIndex_" + i,
-                    null, null, null, null, null));
+            if (movie.getChatId().equals(chatID)) {
+                text += count + "/ " + movie.getName() + "\n";
+                row.add(new InlineKeyboardButton(String.valueOf(count), null, "myListIndex_" + i,
+                        null, null, null, null, null));
+                count ++;
+            }
         }
+        if (count == 0)
+            return new SendMessage(chatID, "List empty");
+
         String removeText = "Want remove some thing ? Click below: ";
         text += removeText.toUpperCase(Locale.ROOT);
 
