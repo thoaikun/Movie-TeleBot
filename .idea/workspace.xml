@@ -4,7 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="93ba17d2-e9f4-48d5-b26f-6c3e49e2b01c" name="Changes" comment="add BotNews" />
+    <list default="true" id="93ba17d2-e9f4-48d5-b26f-6c3e49e2b01c" name="Changes" comment="add BotNews">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -85,6 +87,8 @@
       <workItem from="1651227859969" duration="11000" />
       <workItem from="1651480624430" duration="5012000" />
       <workItem from="1651542570212" duration="2174000" />
+      <workItem from="1651580455878" duration="1013000" />
+      <workItem from="1651582293032" duration="645000" />
     </task>
     <task id="LOCAL-00001" summary="add BotNews">
       <created>1650593060937</created>
